@@ -10,6 +10,10 @@ No incluye todavía: Stock, Orden de Compra, Producción Real ni Merma
 (Etapas 1 a 5). Eso se agrega cuando el uso real de esta etapa lo pida,
 según el criterio de desbloqueo de la Hoja de Ruta — no antes.
 
+> ¿Primera vez en este repo? Ver [PARA_JUANPABLO_Y_MARTIN.md](PARA_JUANPABLO_Y_MARTIN.md)
+> para una guía rápida de contexto, y [docs/HOJA_DE_RUTA.md](docs/HOJA_DE_RUTA.md)
+> para el plan completo de las 7 etapas del sistema.
+
 ## Cómo probarla ahora mismo (local)
 
 Requisitos: Node.js 18 o más nuevo, y una base de datos en Turso (ver sección
