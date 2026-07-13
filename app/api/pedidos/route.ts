@@ -79,14 +79,14 @@ export async function POST(req: NextRequest) {
 
   await db.ensureSchema();
   const tx = await db.client.transaction("write");
-  let pedidoId: number | bigint;
+  let pedidoId: number;
   try {
     const info = await tx.execute({
       sql: `INSERT INTO pedidos (fecha_pedido, fecha_entrega, cliente_id, estado, texto_remito)
             VALUES (?, ?, ?, 'Pendiente', ?)`,
       args: [hoy, fecha_entrega, cliente_id, textoRemito],
     });
-    pedidoId = info.lastInsertRowid!;
+    pedidoId = Number(info.lastInsertRowid!);
     for (const it of itemsResueltos) {
       await tx.execute({
         sql: `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)`,

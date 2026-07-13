@@ -31,6 +31,7 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
   const router = useRouter();
   const [copiado, setCopiado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [borrando, setBorrando] = useState(false);
   const total = pedido.items.reduce((a, i) => a + i.cantidad * i.precio_unitario, 0);
 
   async function cambiarEstado(estado: PedidoConItems["estado"]) {
@@ -49,6 +50,29 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
       router.refresh();
     } catch {
       setError("No tenés conexión a internet. Probá de nuevo.");
+    }
+  }
+
+  async function borrarPedido() {
+    const confirmado = window.confirm(
+      `¿Seguro que querés borrar el pedido de ${pedido.cliente_nombre}? No se puede deshacer.`
+    );
+    if (!confirmado) return;
+
+    setError(null);
+    setBorrando(true);
+    try {
+      const res = await fetch(`/api/pedidos/${pedido.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "No se pudo borrar el pedido.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("No tenés conexión a internet. Probá de nuevo.");
+    } finally {
+      setBorrando(false);
     }
   }
 
@@ -93,6 +117,13 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
       <div className="flex gap-2">
         <button onClick={copiarRemito} className="btn-secundario flex-1 !py-3 !text-base">
           {copiado ? "¡Copiado! ✓" : "Copiar remito"}
+        </button>
+        <button
+          onClick={borrarPedido}
+          disabled={borrando}
+          className="rounded-2xl border-2 border-alerta-500/30 text-alerta-500 px-4 !py-3 !text-base font-body"
+        >
+          {borrando ? "Borrando..." : "Borrar"}
         </button>
       </div>
 

@@ -90,7 +90,7 @@ function prepare(sql: string) {
     run: async (...args: any[]) => {
       await ensureSchema();
       const r = await client.execute({ sql, args });
-      return { changes: r.rowsAffected, lastInsertRowid: r.lastInsertRowid };
+      return { changes: r.rowsAffected, lastInsertRowid: Number(r.lastInsertRowid) };
     },
   };
 }

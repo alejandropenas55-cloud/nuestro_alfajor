@@ -149,8 +149,63 @@ que el pulido visual de una app madura viene después, no en el día uno.
   de cada pantalla interna, sin competir con la identidad de Nuestro
   Alfajor.
 
+## Diseño listo para construir: cargar pedidos pegando el texto de WhatsApp (IA)
+
+Idea planteada por Alejandro: reducir el tipeo manual de Mercedes cuando carga
+un pedido que le llegó por WhatsApp. Quedó **diseñado pero no construido** —
+se retoma cuando el uso real de la carga manual lo pida (mismo criterio de
+desbloqueo de siempre).
+
+**Se descartaron dos caminos más "automáticos" por riesgo/costo:**
+- Leer el WhatsApp real de Mercedes con una librería no oficial (Baileys,
+  whatsapp-web.js): técnicamente simple, pero viola los términos de servicio
+  de WhatsApp y arriesga que Meta banee el número — que es el mismo número
+  con el que el negocio habla con sus clientes. Riesgo inaceptable para algo
+  tan central.
+- WhatsApp Business API oficial (Meta Cloud API): sin riesgo de ban, pero
+  requiere verificación de negocio ante Meta (puede tardar semanas) y
+  probablemente cambiar cómo Mercedes usa ese número desde la app normal.
+  Demasiada fricción para el problema que se quiere resolver.
+
+**Camino elegido: "Pegar pedido" + IA, sin tocar WhatsApp para nada.**
+
+1. En `/pedidos/nuevo` se agrega una segunda forma de cargar (junto a la
+   actual, que sigue existiendo tal cual): un campo para pegar el texto tal
+   cual llega por WhatsApp, con un botón "Interpretar pedido".
+2. Ese botón llama a un endpoint nuevo, `POST /api/pedidos/interpretar`, que
+   manda el texto pegado a un modelo de IA (Claude, vía `@anthropic-ai/sdk`,
+   modelo económico tipo Haiku — alcanza de sobra para esta tarea) junto con
+   el catálogo vigente (`listarProductos()`) y la lista de clientes, pidiendo
+   como respuesta un JSON estricto: cliente sugerido (o "no encontrado"),
+   lista de `{ producto_id, cantidad }`, y cualquier parte del texto que no
+   pudo interpretar.
+3. Esa respuesta **prellena el mismo formulario de siempre**
+   (`FormNuevoPedido`) — no crea el pedido directo. Mercedes ve las
+   cantidades ya cargadas, revisa, corrige si algo se interpretó mal, y
+   **siempre** tiene que elegir ella la fecha de entrega a mano — la IA
+   nunca la completa sola, es el gesto explícito de "reviso y confirmo" que
+   pidió Alejandro.
+4. Si algo del texto no se pudo interpretar, se muestra como aviso visible
+   (no se descarta en silencio) para que lo cargue a mano.
+5. Guardar el pedido sigue siendo exactamente el mismo `POST /api/pedidos`
+   de hoy — este flujo solo cambia cómo se llena el formulario, no cómo se
+   guarda.
+
+**Por qué es seguro por diseño**: nada se guarda automático; la IA solo
+prellena un formulario que igual requiere confirmación humana (mismo riesgo
+que cargar a mano hoy, con menos tipeo). Si la IA falla o no está segura,
+Mercedes siempre puede seguir cargando el pedido manualmente como ya lo hace.
+
+**Piezas nuevas cuando se construya**: dependencia `@anthropic-ai/sdk`,
+variable de entorno `ANTHROPIC_API_KEY` (local y en Vercel), `lib/interpretarPedido.ts`
+(arma el prompt y valida la forma de la respuesta antes de confiar en ella),
+`app/api/pedidos/interpretar/route.ts`, y una pequeña ampliación de
+`FormNuevoPedido` para el modo "pegar texto".
+
 ## Qué falta decidir
 
 - Validar el diseño visual con Javier antes de invertir en Stock/Producción
   Real (Etapas 1+), según el riesgo 6 del pre-mortem.
 - Comprar el dominio elegido.
+- Construir "Pegar pedido + IA" cuando la carga manual muestre que vale la
+  pena el esfuerzo (ver sección de arriba).
