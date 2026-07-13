@@ -1,0 +1,12 @@
+{
+  "name": "Nuestro Alfajor",
+  "short_name": "N. Alfajor",
+  "description": "Pedidos, remitos y producción — Nuestro Alfajor",
+  "start_url": "/pedidos",
+  "display": "standalone",
+  "background_color": "#FBF6EE",
+  "theme_color": "#A6672A",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
