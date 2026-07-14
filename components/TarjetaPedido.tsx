@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -118,6 +119,12 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
         <button onClick={copiarRemito} className="btn-secundario flex-1 !py-3 !text-base">
           {copiado ? "¡Copiado! ✓" : "Copiar remito"}
         </button>
+        <Link
+          href={`/pedidos/${pedido.id}/editar`}
+          className="rounded-2xl border-2 border-masa-300 text-dulce-600 px-4 !py-3 !text-base font-body flex items-center"
+        >
+          Editar
+        </Link>
         <button
           onClick={borrarPedido}
           disabled={borrando}

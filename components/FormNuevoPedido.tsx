@@ -14,16 +14,25 @@ function nombreProductoCliente(p: Producto) {
 export default function FormNuevoPedido({
   clientesIniciales,
   productos,
+  pedidoId,
+  clienteIdInicial,
+  fechaEntregaInicial,
+  cantidadesIniciales,
 }: {
   clientesIniciales: Cliente[];
   productos: Producto[];
+  pedidoId?: number;
+  clienteIdInicial?: number;
+  fechaEntregaInicial?: string;
+  cantidadesIniciales?: Record<number, number>;
 }) {
+  const editando = pedidoId != null;
   const router = useRouter();
   const [clientes, setClientes] = useState(clientesIniciales);
-  const [clienteId, setClienteId] = useState<number | "nuevo" | "">("");
+  const [clienteId, setClienteId] = useState<number | "nuevo" | "">(clienteIdInicial ?? "");
   const [nombreNuevoCliente, setNombreNuevoCliente] = useState("");
-  const [fechaEntrega, setFechaEntrega] = useState("");
-  const [cantidades, setCantidades] = useState<Record<number, number>>({});
+  const [fechaEntrega, setFechaEntrega] = useState(fechaEntregaInicial ?? "");
+  const [cantidades, setCantidades] = useState<Record<number, number>>(cantidadesIniciales ?? {});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [remitoGenerado, setRemitoGenerado] = useState<string | null>(null);
@@ -70,8 +79,8 @@ export default function FormNuevoPedido({
         .filter(([, cant]) => cant > 0)
         .map(([producto_id, cantidad]) => ({ producto_id: Number(producto_id), cantidad }));
 
-      const res = await fetch("/api/pedidos", {
-        method: "POST",
+      const res = await fetch(editando ? `/api/pedidos/${pedidoId}` : "/api/pedidos", {
+        method: editando ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cliente_id: clienteIdFinal, fecha_entrega: fechaEntrega, items }),
       });
@@ -90,9 +99,13 @@ export default function FormNuevoPedido({
     return (
       <div className="flex flex-col gap-4">
         <div className="card">
-          <p className="font-display text-dulce-700 mb-2">Pedido guardado ✓</p>
+          <p className="font-display text-dulce-700 mb-2">
+            {editando ? "Pedido actualizado ✓" : "Pedido guardado ✓"}
+          </p>
           <p className="text-sm text-dulce-500 mb-3">
-            Copiá este texto y pegalo en WhatsApp:
+            {editando
+              ? "Copiá este texto actualizado y pegalo en WhatsApp:"
+              : "Copiá este texto y pegalo en WhatsApp:"}
           </p>
           <pre className="whitespace-pre-wrap font-body text-sm bg-masa-50 rounded-xl p-3 border border-masa-100">
             {remitoGenerado}
@@ -180,7 +193,7 @@ export default function FormNuevoPedido({
       )}
 
       <button className="btn-primario" disabled={enviando} onClick={enviar}>
-        {enviando ? "Guardando..." : "Guardar pedido"}
+        {enviando ? "Guardando..." : editando ? "Guardar cambios" : "Guardar pedido"}
       </button>
     </div>
   );
