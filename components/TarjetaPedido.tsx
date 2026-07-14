@@ -135,20 +135,29 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
       </div>
 
       <div className="flex gap-2">
-        {ESTADOS.map((e) => (
-          <button
-            key={e}
-            onClick={() => cambiarEstado(e)}
-            disabled={e === pedido.estado}
-            className={`flex-1 !py-2 !text-sm rounded-xl font-body border-2 ${
-              e === pedido.estado
-                ? "bg-dulce-500 text-white border-dulce-500"
-                : "bg-white text-dulce-600 border-masa-300"
-            }`}
-          >
-            {e}
-          </button>
-        ))}
+        {ESTADOS.map((e, idx) => {
+          const indiceActual = ESTADOS.indexOf(pedido.estado);
+          // "Remito Enviado" y "Entregado" quedan pintados de verde apenas se
+          // alcanzan y lo siguen estando al avanzar (no se "despintan" al
+          // pasar al siguiente estado) — Pendiente no entra en esta regla.
+          const alcanzado = idx >= 1 && idx <= indiceActual;
+          return (
+            <button
+              key={e}
+              onClick={() => cambiarEstado(e)}
+              disabled={e === pedido.estado}
+              className={`flex-1 !py-2 !text-sm rounded-xl font-body border-2 ${
+                alcanzado
+                  ? "bg-rio-500 text-white border-rio-500"
+                  : e === pedido.estado
+                  ? "bg-dulce-500 text-white border-dulce-500"
+                  : "bg-white text-dulce-600 border-masa-300"
+              }`}
+            >
+              {e}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
