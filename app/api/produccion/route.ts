@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getSesion } from "@/lib/session";
-import { calcularManana, type ItemPedidoAgregado } from "@/lib/produccion";
+import { calcularProduccion, type ItemPedidoAgregado } from "@/lib/produccion";
 
 export async function GET(req: NextRequest) {
   if (!(await getSesion())) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
     )
     .all(fecha)) as ItemPedidoAgregado[];
 
-  const calculoDia = calcularManana(fecha, filasDia);
-  const calculoAcumulado = calcularManana(fecha, filasAcumulado);
+  const calculoDia = calcularProduccion(fecha, filasDia);
+  const calculoAcumulado = calcularProduccion(fecha, filasAcumulado);
 
   return NextResponse.json({
     calculoDia,

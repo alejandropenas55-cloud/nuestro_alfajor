@@ -1,7 +1,9 @@
 // --------------------------------------------------------------------------
 // Fórmulas de producción — traducidas 1:1 de la sección 3 del documento de
-// especificación. Estos números son datos de campo verificados con Javier,
-// no aproximaciones: no redondear ni "prolijizar" las constantes.
+// especificación y del Excel `NuestroAlfajor_Sistema_Produccion.xlsx`
+// (hojas Amasijo-Horneado, Relleno-Glase, Armado-Packaging). Estos números
+// son datos de campo verificados con Javier, no aproximaciones: no
+// redondear ni "prolijizar" las constantes.
 // --------------------------------------------------------------------------
 
 export const CONST = {
@@ -14,7 +16,41 @@ export const CONST = {
   HORNEADAS_POR_GARRAFA: 45, // garrafa de 45kg
   MAX_AMASIJOS_JORNADA_NORMAL: 3,
   PAQUETES_X7_POR_CAJA: 15,
+  ALFAJORES_POR_PREPARADO_GLASE: 115, // Frutal + Santafesino comparten receta
 };
+
+// Insumos crudos por amasijo (Etapa 2 — no existían en el cálculo simplificado
+// de Etapa 0). Cantidad por amasijo de masa Maicena/Frutal y por amasijo de
+// masa Pepas; el necesario total es la suma de ambos aportes.
+export const INSUMOS_MASA: {
+  nombre: string;
+  unidad: string;
+  porAmasijoMF: number;
+  porAmasijoPepas: number;
+  proveedor: string;
+}[] = [
+  { nombre: "Huevo", unidad: "u", porAmasijoMF: 40, porAmasijoPepas: 40, proveedor: "Huvero" },
+  { nombre: "Vainilla", unidad: "ml", porAmasijoMF: 100, porAmasijoPepas: 0, proveedor: "Emeth · Insupar" },
+  { nombre: "Colorante amarillo", unidad: "cm³", porAmasijoMF: 10, porAmasijoPepas: 0, proveedor: "Emeth · Insupar" },
+  { nombre: "Miel", unidad: "cm³", porAmasijoMF: 50, porAmasijoPepas: 0, proveedor: "Apicultor local" },
+  { nombre: "Sorbato de potasio", unidad: "g", porAmasijoMF: 20, porAmasijoPepas: 0, proveedor: "CGA · Insupar/ISCO" },
+  { nombre: "Propionato de calcio", unidad: "g", porAmasijoMF: 60, porAmasijoPepas: 0, proveedor: "CGA · Insupar/ISCO" },
+  { nombre: "Azúcar", unidad: "kg", porAmasijoMF: 4, porAmasijoPepas: 4, proveedor: "GAMA" },
+  { nombre: "Margarina", unidad: "kg", porAmasijoMF: 4, porAmasijoPepas: 4, proveedor: "Cordobesa · ISCO Varisco" },
+  { nombre: "Maicena (Femag)", unidad: "kg", porAmasijoMF: 6, porAmasijoPepas: 0, proveedor: "Insupar" },
+  { nombre: "Harina 000", unidad: "kg", porAmasijoMF: 4, porAmasijoPepas: 10, proveedor: "Estrella del Paraná · ISCO Varisco" },
+  { nombre: "Polvo de hornear", unidad: "g", porAmasijoMF: 65, porAmasijoPepas: 80, proveedor: "Prindal · ISCO Varisco" },
+  { nombre: "Bicarbonato de sodio", unidad: "g", porAmasijoMF: 0, porAmasijoPepas: 5, proveedor: "—" },
+  { nombre: "Esencia de manteca", unidad: "ml", porAmasijoMF: 0, porAmasijoPepas: 50, proveedor: "—" },
+];
+
+// Capacidad de armado — referencia estática (María + Francisco), no depende
+// de la fecha elegida.
+export const CAPACIDAD_ARMADO = [
+  { turno: "1ra hora", alfajoresPorHora: 504 },
+  { turno: "2da hora", alfajoresPorHora: 392 },
+  { turno: "3ra hora", alfajoresPorHora: 336, nota: "caída ~33% por cansancio, considerar rotación" },
+];
 
 export type ItemPedidoAgregado = {
   linea: string; // Maicena | Frutal | Santafesino | Pepas...
@@ -22,7 +58,14 @@ export type ItemPedidoAgregado = {
   cantidad: number; // cantidad de paquetes/bandejas (no de alfajores sueltos)
 };
 
-export type CalculoManana = {
+export type InsumoCalculado = {
+  nombre: string;
+  unidad: string;
+  necesarioTotal: number;
+  proveedor?: string;
+};
+
+export type CalculoProduccion = {
   fecha: string;
   alfajoresMaicena: number;
   alfajoresFrutal: number;
@@ -44,15 +87,25 @@ export type CalculoManana = {
     bandejaAbierta320g: number;
     etiquetaPepas: number;
   };
+  // Etapa 2 — insumos crudos, sin Stock/Faltante todavía (eso es Etapa 1).
+  insumosMasa: InsumoCalculado[];
+  insumosRelleno: InsumoCalculado[];
+  preparadosGlase: number;
+  insumosGlase: InsumoCalculado[];
 };
 
-export function calcularManana(
+export function calcularProduccion(
   fecha: string,
   items: ItemPedidoAgregado[]
-): CalculoManana {
+): CalculoProduccion {
   const cantX7 = (linea: string) =>
     items
       .filter((i) => i.linea === linea && i.formato === "x7")
+      .reduce((a, i) => a + i.cantidad, 0);
+
+  const bandejasPorLineaPepas = (linea: string) =>
+    items
+      .filter((i) => i.linea === linea && i.formato === "bandeja18")
       .reduce((a, i) => a + i.cantidad, 0);
 
   const paquetesMaicenaX7 = cantX7("Maicena");
@@ -92,6 +145,71 @@ export function calcularManana(
   const paquetesX7Totales =
     paquetesMaicenaX7 + paquetesFrutalX7 + paquetesSantafesinoX7;
 
+  // --- Etapa 2: insumos de masa (Amasijo-Horneado) ---
+  const insumosMasa: InsumoCalculado[] = INSUMOS_MASA.map((i) => ({
+    nombre: i.nombre,
+    unidad: i.unidad,
+    proveedor: i.proveedor,
+    necesarioTotal:
+      i.porAmasijoMF * amasijosMF + i.porAmasijoPepas * amasijosPepas,
+  }));
+
+  // --- Etapa 2: rellenos (por variedad de Pepas, no el agregado) ---
+  const pepasDDL = bandejasPorLineaPepas("Pepas DDL") * 18;
+  const pepasMembrillo = bandejasPorLineaPepas("Pepas Membrillo") * 18;
+  const pepasArandano = bandejasPorLineaPepas("Pepas Arándano") * 18;
+  const pepasBatata = bandejasPorLineaPepas("Pepas Batata") * 18;
+  const pepasFrutosBosque = bandejasPorLineaPepas("Pepas Frutos del Bosque") * 18;
+
+  const insumosRelleno: InsumoCalculado[] = [
+    {
+      nombre: "Dulce de leche",
+      unidad: "kg",
+      proveedor: "La Colonias",
+      necesarioTotal:
+        (alfajoresMaicena * 25.51 + alfajoresSantafesino * 30 + pepasDDL * 7.5) / 1000,
+    },
+    {
+      nombre: "Membrillo",
+      unidad: "kg",
+      necesarioTotal: (alfajoresFrutal * 21.74 + pepasMembrillo * 7.5) / 1000,
+    },
+    {
+      nombre: "Coco rallado",
+      unidad: "kg",
+      necesarioTotal: (alfajoresMaicena * 0.71) / 1000,
+    },
+    {
+      nombre: "Dulce de batata",
+      unidad: "kg",
+      necesarioTotal: (pepasBatata * 5) / 1000,
+    },
+    {
+      nombre: "Mermelada de arándano",
+      unidad: "kg",
+      necesarioTotal: (pepasArandano * 7) / 1000,
+    },
+    {
+      nombre: "Frutos del bosque",
+      unidad: "kg",
+      necesarioTotal: (pepasFrutosBosque * 7) / 1000,
+    },
+  ];
+
+  // --- Etapa 2: glasé (Frutal + Santafesino) ---
+  const alfajoresConGlase = alfajoresFrutal + alfajoresSantafesino;
+  const preparadosGlase = Math.ceil(
+    alfajoresConGlase / CONST.ALFAJORES_POR_PREPARADO_GLASE
+  );
+
+  const insumosGlase: InsumoCalculado[] = [
+    { nombre: "Azúcar impalpable", unidad: "kg", necesarioTotal: preparadosGlase * 1.5 },
+    { nombre: "Albúmina", unidad: "g", necesarioTotal: preparadosGlase * 20 },
+    { nombre: "Glucosa", unidad: "g", necesarioTotal: preparadosGlase * 80 },
+    { nombre: "Esencia de limón", unidad: "ml", necesarioTotal: preparadosGlase * 5 },
+    { nombre: "Ácido acético", unidad: "ml", necesarioTotal: preparadosGlase * 2.5 },
+  ];
+
   return {
     fecha,
     alfajoresMaicena,
@@ -114,5 +232,9 @@ export function calcularManana(
       bandejaAbierta320g: bandejasPepas,
       etiquetaPepas: bandejasPepas,
     },
+    insumosMasa,
+    insumosRelleno,
+    preparadosGlase,
+    insumosGlase,
   };
 }
