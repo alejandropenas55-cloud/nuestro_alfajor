@@ -67,6 +67,16 @@ CREATE TABLE IF NOT EXISTS progreso_uso (
   cargo_lo_esperado INTEGER NOT NULL DEFAULT 0,
   UNIQUE(usuario_id, fecha)
 );
+
+-- Etapa 1 de la Hoja de Ruta: Stock simple, sin historial (se pisa el
+-- valor al editar). "nombre" es la clave natural, mismo string que el
+-- nombre de insumo usado en lib/produccion.ts.
+CREATE TABLE IF NOT EXISTS stock_insumos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL UNIQUE,
+  cantidad REAL NOT NULL DEFAULT 0,
+  actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 let schemaReady: Promise<unknown> | null = null;

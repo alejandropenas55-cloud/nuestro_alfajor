@@ -89,6 +89,7 @@ export type CalculoProduccion = {
   };
   // Etapa 2 — insumos crudos, sin Stock/Faltante todavía (eso es Etapa 1).
   insumosMasa: InsumoCalculado[];
+  tapasSantafesino: InsumoCalculado; // unidades a comprar a Don Jesús, trackeable en Stock
   insumosRelleno: InsumoCalculado[];
   preparadosGlase: number;
   insumosGlase: InsumoCalculado[];
@@ -133,9 +134,9 @@ export function calcularProduccion(
   const avisoAmasijos = totalAmasijos > CONST.MAX_AMASIJOS_JORNADA_NORMAL;
 
   // Santafesino: tapas compradas a Don Jesús, 3 tapas/alfajor, 80 tapas/kg
-  const tapasSantafesino = alfajoresSantafesino * CONST.TAPAS_POR_ALFAJOR_SANTAFESINO;
+  const tapasSantafesinoUnidades = alfajoresSantafesino * CONST.TAPAS_POR_ALFAJOR_SANTAFESINO;
   const kgTapasDonJesus = Math.ceil(
-    (tapasSantafesino / CONST.TAPAS_POR_KG_DON_JESUS) * 100
+    (tapasSantafesinoUnidades / CONST.TAPAS_POR_KG_DON_JESUS) * 100
   ) / 100;
 
   // Horneadas físicas: todo amasijo (MF y Pepas) se hornea, Santafesino no.
@@ -153,6 +154,13 @@ export function calcularProduccion(
     necesarioTotal:
       i.porAmasijoMF * amasijosMF + i.porAmasijoPepas * amasijosPepas,
   }));
+
+  const tapasSantafesino: InsumoCalculado = {
+    nombre: "Tapas malteadas (Don Jesús)",
+    unidad: "u",
+    proveedor: "Don Jesús",
+    necesarioTotal: tapasSantafesinoUnidades,
+  };
 
   // --- Etapa 2: rellenos (por variedad de Pepas, no el agregado) ---
   const pepasDDL = bandejasPorLineaPepas("Pepas DDL") * 18;
@@ -233,6 +241,7 @@ export function calcularProduccion(
       etiquetaPepas: bandejasPepas,
     },
     insumosMasa,
+    tapasSantafesino,
     insumosRelleno,
     preparadosGlase,
     insumosGlase,

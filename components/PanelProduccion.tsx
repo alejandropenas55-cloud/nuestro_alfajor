@@ -31,6 +31,34 @@ export default function PanelProduccion() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Etapa 1 — Stock: independiente de la fecha/pestaña, se carga una sola vez.
+  const [stock, setStock] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetch("/api/stock")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapa: Record<string, number> = {};
+        for (const fila of data.stock ?? []) mapa[fila.nombre] = fila.cantidad;
+        setStock(mapa);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function actualizarStock(nombre: string, cantidad: number) {
+    setStock((prev) => ({ ...prev, [nombre]: cantidad }));
+    try {
+      await fetch("/api/stock", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, cantidad }),
+      });
+    } catch {
+      // Si falla la conexión, el valor queda en pantalla igual — se
+      // reintenta en la próxima edición. No bloqueamos la carga por esto.
+    }
+  }
+
   useEffect(() => {
     let cancelado = false;
     setCargando(true);
@@ -93,6 +121,8 @@ export default function PanelProduccion() {
             calculo={datos.calculoDia}
             huboPedidos={datos.huboPedidosDia}
             pestana={pestana}
+            stock={stock}
+            onCambiarStock={actualizarStock}
           />
 
           <div className="border-t-2 border-dashed border-masa-300 pt-1" />
@@ -103,6 +133,8 @@ export default function PanelProduccion() {
             calculo={datos.calculoAcumulado}
             huboPedidos={datos.huboPedidosAcumulado}
             pestana={pestana}
+            stock={stock}
+            onCambiarStock={actualizarStock}
             destacarAviso
           />
         </div>
@@ -116,12 +148,19 @@ function fechaLegible(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
+type StockProps = {
+  stock: Record<string, number>;
+  onCambiarStock: (nombre: string, cantidad: number) => void;
+};
+
 function BloqueCalculo({
   titulo,
   subtitulo,
   calculo,
   huboPedidos,
   pestana,
+  stock,
+  onCambiarStock,
   destacarAviso,
 }: {
   titulo: string;
@@ -130,7 +169,7 @@ function BloqueCalculo({
   huboPedidos: boolean;
   pestana: PestanaId;
   destacarAviso?: boolean;
-}) {
+} & StockProps) {
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -168,26 +207,43 @@ function BloqueCalculo({
 
               <div className="card">
                 <p className="font-display text-dulce-700 mb-2">Compra a Don Jesús</p>
-                <Fila label="Kg de tapas Santafesino" valor={calculo.kgTapasDonJesus} />
+                <Fila label="Kg de tapas Santafesino (referencia)" valor={calculo.kgTapasDonJesus} />
+                <div className="mt-2 pt-1 border-t border-masa-100">
+                  <FilaInsumo
+                    insumo={calculo.tapasSantafesino}
+                    stock={stock[calculo.tapasSantafesino.nombre] ?? 0}
+                    onCambiarStock={onCambiarStock}
+                  />
+                </div>
               </div>
 
-              <TablaInsumos titulo="Insumos de masa" insumos={calculo.insumosMasa} />
+              <TablaInsumos
+                titulo="Insumos de masa"
+                insumos={calculo.insumosMasa}
+                stock={stock}
+                onCambiarStock={onCambiarStock}
+              />
             </>
           )}
 
           {pestana === "relleno" && (
             <>
-              <TablaInsumos titulo="Rellenos" insumos={calculo.insumosRelleno} />
+              <TablaInsumos
+                titulo="Rellenos"
+                insumos={calculo.insumosRelleno}
+                stock={stock}
+                onCambiarStock={onCambiarStock}
+              />
 
               <div className="card">
                 <p className="font-display text-dulce-700 mb-2">Glasé</p>
                 <Fila label="Preparados de glasé" valor={calculo.preparadosGlase} destacado />
                 {calculo.insumosGlase.map((i) => (
-                  <Fila
+                  <FilaInsumo
                     key={i.nombre}
-                    label={i.nombre}
-                    valor={redondeado(i.necesarioTotal)}
-                    unidad={i.unidad}
+                    insumo={i}
+                    stock={stock[i.nombre] ?? 0}
+                    onCambiarStock={onCambiarStock}
                   />
                 ))}
               </div>
@@ -196,16 +252,20 @@ function BloqueCalculo({
 
           {pestana === "packaging" && (
             <>
-              <div className="card">
-                <p className="font-display text-dulce-700 mb-2">Packaging</p>
-                <Fila label="Bandeja plástica x7" valor={calculo.packaging.bandejaPlasticaX7} />
-                <Fila label="Bolsa impresa x7" valor={calculo.packaging.bolsaImpresaX7} />
-                <Fila label="Caja x7 (cada 15 paq.)" valor={calculo.packaging.cajaX7} />
-                <Fila label="Bandeja con tapa x14" valor={calculo.packaging.bandejaTapaIntegradaX14} />
-                <Fila label="Etiqueta cierre x14" valor={calculo.packaging.etiquetaCierreX14} />
-                <Fila label="Bandeja abierta 320g (Pepas)" valor={calculo.packaging.bandejaAbierta320g} />
-                <Fila label="Etiqueta Pepas" valor={calculo.packaging.etiquetaPepas} />
-              </div>
+              <TablaInsumos
+                titulo="Packaging"
+                insumos={[
+                  { nombre: "Bandeja plástica x7", unidad: "u", necesarioTotal: calculo.packaging.bandejaPlasticaX7 },
+                  { nombre: "Bolsa impresa x7 (RNPA)", unidad: "u", necesarioTotal: calculo.packaging.bolsaImpresaX7 },
+                  { nombre: "Caja x7", unidad: "u", necesarioTotal: calculo.packaging.cajaX7 },
+                  { nombre: "Bandeja con tapa x14", unidad: "u", necesarioTotal: calculo.packaging.bandejaTapaIntegradaX14 },
+                  { nombre: "Etiqueta cierre x14", unidad: "u", necesarioTotal: calculo.packaging.etiquetaCierreX14 },
+                  { nombre: "Bandeja abierta 320g Pepas", unidad: "u", necesarioTotal: calculo.packaging.bandejaAbierta320g },
+                  { nombre: "Etiqueta Pepas", unidad: "u", necesarioTotal: calculo.packaging.etiquetaPepas },
+                ]}
+                stock={stock}
+                onCambiarStock={onCambiarStock}
+              />
 
               <div className="card">
                 <p className="font-display text-dulce-700 mb-1">Capacidad de armado</p>
@@ -242,13 +302,79 @@ function redondeado(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-function TablaInsumos({ titulo, insumos }: { titulo: string; insumos: InsumoCalculado[] }) {
+function TablaInsumos({
+  titulo,
+  insumos,
+  stock,
+  onCambiarStock,
+}: {
+  titulo: string;
+  insumos: InsumoCalculado[];
+} & StockProps) {
   return (
     <div className="card">
-      <p className="font-display text-dulce-700 mb-2">{titulo}</p>
+      <p className="font-display text-dulce-700 mb-1">{titulo}</p>
+      <p className="text-[11px] text-dulce-400 mb-2 flex justify-end gap-4 pr-1">
+        <span className="w-14 text-center">Necesita</span>
+        <span className="w-16 text-center">Stock</span>
+        <span className="w-14 text-center">Falta</span>
+      </p>
       {insumos.map((i) => (
-        <Fila key={i.nombre} label={i.nombre} valor={redondeado(i.necesarioTotal)} unidad={i.unidad} />
+        <FilaInsumo
+          key={i.nombre}
+          insumo={i}
+          stock={stock[i.nombre] ?? 0}
+          onCambiarStock={onCambiarStock}
+        />
       ))}
+    </div>
+  );
+}
+
+function FilaInsumo({
+  insumo,
+  stock,
+  onCambiarStock,
+}: {
+  insumo: InsumoCalculado;
+} & { stock: number; onCambiarStock: (nombre: string, cantidad: number) => void }) {
+  const necesario = redondeado(insumo.necesarioTotal);
+  const faltante = Math.max(redondeado(necesario - stock), 0);
+  const [valorLocal, setValorLocal] = useState(String(stock));
+
+  useEffect(() => {
+    setValorLocal(String(stock));
+  }, [stock]);
+
+  function guardar() {
+    const n = Math.max(0, parseFloat(valorLocal.replace(",", ".")) || 0);
+    setValorLocal(String(n));
+    if (n !== stock) onCambiarStock(insumo.nombre, n);
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 py-1.5 border-b border-masa-100 last:border-0">
+      <span className="text-dulce-700 text-sm flex-1 min-w-0 truncate" title={insumo.nombre}>
+        {insumo.nombre}
+        <span className="text-dulce-400 text-xs"> ({insumo.unidad})</span>
+      </span>
+      <span className="w-14 text-center font-body font-semibold text-dulce-700">{necesario}</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        className="w-16 text-center rounded-lg border-2 border-masa-300 py-1 text-sm"
+        value={valorLocal}
+        onChange={(e) => setValorLocal(e.target.value)}
+        onBlur={guardar}
+      />
+      <span
+        className={`w-14 text-center font-body font-semibold ${
+          faltante > 0 ? "text-alerta-500" : "text-rio-500"
+        }`}
+      >
+        {faltante}
+      </span>
     </div>
   );
 }
