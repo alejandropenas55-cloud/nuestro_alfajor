@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 const ITEMS = [
   { href: "/pedidos", label: "Pedidos", icon: "📦" },
-  { href: "/manana", label: "Mañana", icon: "🥣" },
+  { href: "/produccion", label: "Producción", icon: "🥣" },
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 

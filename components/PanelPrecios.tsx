@@ -117,6 +117,7 @@ export default function PanelPrecios({
                     Fecha de corte (a partir de qué entrega rige el precio nuevo)
                     <input
                       type="date"
+                      lang="es-AR"
                       className="input-grande !py-2 !text-base mt-1"
                       value={borrador.fecha_corte ?? ""}
                       onChange={(e) => setBorrador((b) => ({ ...b, fecha_corte: e.target.value }))}

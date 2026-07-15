@@ -4,16 +4,35 @@ import { getSesion } from "@/lib/session";
 import { getProducto, precioVigente } from "@/lib/pricing";
 import { generarTextoRemito } from "@/lib/remito";
 
-export async function GET() {
+const ESTADOS_VALIDOS = ["Pendiente", "Remito Enviado", "Entregado"];
+
+export async function GET(req: NextRequest) {
   if (!(await getSesion())) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
-  const pedidos = await db
+  const params = req.nextUrl.searchParams;
+  const estado = params.get("estado");
+  const offset = Math.max(0, parseInt(params.get("offset") ?? "0", 10) || 0);
+  const limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "20", 10) || 20));
+
+  if (estado && !ESTADOS_VALIDOS.includes(estado)) {
+    return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
+  }
+
+  const whereEstado = estado ? "WHERE p.estado = ?" : "";
+  const args = estado ? [estado, limit + 1, offset] : [limit + 1, offset];
+
+  const pedidos = (await db
     .prepare(
       `SELECT p.*, c.nombre AS cliente_nombre, c.ciudad AS cliente_ciudad
        FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
-       ORDER BY p.fecha_entrega ASC, p.id DESC`
+       ${whereEstado}
+       ORDER BY p.fecha_entrega ASC, p.id DESC
+       LIMIT ? OFFSET ?`
     )
-    .all();
+    .all(...args)) as any[];
+
+  const hasMore = pedidos.length > limit;
+  const pagina = hasMore ? pedidos.slice(0, limit) : pedidos;
 
   const items = db.prepare(
     `SELECT pi.*, pr.linea, pr.formato FROM pedido_items pi
@@ -22,13 +41,13 @@ export async function GET() {
   );
 
   const pedidosConItems = await Promise.all(
-    (pedidos as any[]).map(async (p) => ({
+    pagina.map(async (p) => ({
       ...p,
       items: await items.all(p.id),
     }))
   );
 
-  return NextResponse.json({ pedidos: pedidosConItems });
+  return NextResponse.json({ pedidos: pedidosConItems, hasMore });
 }
 
 export async function POST(req: NextRequest) {

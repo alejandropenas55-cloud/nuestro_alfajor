@@ -9,16 +9,16 @@ function manana(): string {
   return d.toISOString().slice(0, 10);
 }
 
-type RespuestaManana = {
+type RespuestaProduccion = {
   calculoDia: CalculoManana;
   calculoAcumulado: CalculoManana;
   huboPedidosDia: boolean;
   huboPedidosAcumulado: boolean;
 };
 
-export default function PanelManana() {
+export default function PanelProduccion() {
   const [fecha, setFecha] = useState(manana());
-  const [datos, setDatos] = useState<RespuestaManana | null>(null);
+  const [datos, setDatos] = useState<RespuestaProduccion | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function PanelManana() {
     let cancelado = false;
     setCargando(true);
     setError(null);
-    fetch(`/api/manana?fecha=${fecha}`)
+    fetch(`/api/produccion?fecha=${fecha}`)
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "No se pudo calcular.");
@@ -45,6 +45,7 @@ export default function PanelManana() {
         <label className="block mb-2 font-display text-dulce-700">Fecha de entrega a producir</label>
         <input
           type="date"
+          lang="es-AR"
           className="input-grande"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}

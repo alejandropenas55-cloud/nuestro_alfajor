@@ -116,48 +116,53 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
       )}
 
       <div className="flex gap-2">
-        <button onClick={copiarRemito} className="btn-secundario flex-1 !py-3 !text-base">
+        <button onClick={copiarRemito} className="btn btn-secundario flex-1 !py-3 !text-base">
           {copiado ? "¡Copiado! ✓" : "Copiar remito"}
         </button>
         <Link
           href={`/pedidos/${pedido.id}/editar`}
-          className="rounded-2xl border-2 border-masa-300 text-dulce-600 px-4 !py-3 !text-base font-body flex items-center"
+          className="btn bg-white border-2 border-masa-300 text-dulce-600 !px-4 !py-3 !text-base"
         >
           Editar
         </Link>
         <button
           onClick={borrarPedido}
           disabled={borrando}
-          className="rounded-2xl border-2 border-alerta-500/30 text-alerta-500 px-4 !py-3 !text-base font-body"
+          className="btn bg-white border-2 border-alerta-500/30 text-alerta-500 !px-4 !py-3 !text-base"
         >
           {borrando ? "Borrando..." : "Borrar"}
         </button>
       </div>
 
-      <div className="flex gap-2">
-        {ESTADOS.map((e, idx) => {
-          const indiceActual = ESTADOS.indexOf(pedido.estado);
-          // "Remito Enviado" y "Entregado" quedan pintados de verde apenas se
-          // alcanzan y lo siguen estando al avanzar (no se "despintan" al
-          // pasar al siguiente estado) — Pendiente no entra en esta regla.
-          const alcanzado = idx >= 1 && idx <= indiceActual;
-          return (
-            <button
-              key={e}
-              onClick={() => cambiarEstado(e)}
-              disabled={e === pedido.estado}
-              className={`flex-1 !py-2 !text-sm rounded-xl font-body border-2 ${
-                alcanzado
-                  ? "bg-rio-500 text-white border-rio-500"
-                  : e === pedido.estado
-                  ? "bg-dulce-500 text-white border-dulce-500"
-                  : "bg-white text-dulce-600 border-masa-300"
-              }`}
-            >
-              {e}
-            </button>
-          );
-        })}
+      <div>
+        <p className="text-xs text-dulce-400 uppercase tracking-wide font-body mb-1.5">
+          Estado del pedido
+        </p>
+        <div className="flex gap-2">
+          {ESTADOS.map((e, idx) => {
+            const indiceActual = ESTADOS.indexOf(pedido.estado);
+            // "Remito Enviado" y "Entregado" quedan pintados de verde apenas se
+            // alcanzan y lo siguen estando al avanzar (no se "despintan" al
+            // pasar al siguiente estado) — Pendiente no entra en esta regla.
+            const alcanzado = idx >= 1 && idx <= indiceActual;
+            return (
+              <button
+                key={e}
+                onClick={() => cambiarEstado(e)}
+                disabled={e === pedido.estado}
+                className={`flex-1 !py-1.5 !text-xs rounded-full font-body border-2 transition-colors ${
+                  alcanzado
+                    ? "bg-rio-500 text-white border-rio-500"
+                    : e === pedido.estado
+                    ? "bg-dulce-500 text-white border-dulce-500"
+                    : "bg-white text-dulce-600 border-masa-300"
+                }`}
+              >
+                {e}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
