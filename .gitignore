@@ -4,3 +4,12 @@ data/
 .env*.local
 tsconfig.tsbuildinfo
 .claude/
+
+# Lanzadores locales para probar cada etapa con doble clic. Se guardan
+# a proposito fuera del control de versiones: si estuvieran versionados,
+# "git checkout <etapa>" los borraria al cambiar a una etapa anterior a
+# la que se agregaron (porque ese commit viejo nunca los tuvo).
+/PROBAR - *.bat
+/VOLVER a lo ultimo en desarrollo.bat
+/scripts/probar-etapa.ps1
+/scripts/volver-a-main.ps1
