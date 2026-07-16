@@ -12,7 +12,7 @@ set INTENTOS=0
 :reintentar_checkout
 if exist ".git\index.lock" del /f /q ".git\index.lock" >nul 2>&1
 git checkout -- . >nul 2>&1
-git checkout produccion-actual --quiet
+(for /l %%i in (1,1,50) do echo y) | git checkout produccion-actual --quiet
 if errorlevel 1 (
     set /a INTENTOS+=1
     if !INTENTOS! LSS 8 (
