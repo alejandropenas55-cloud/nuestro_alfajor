@@ -3,15 +3,26 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const ITEMS = [
+const ITEMS_BASE = [
   { href: "/pedidos", label: "Pedidos", icon: "📦" },
   { href: "/produccion", label: "Producción", icon: "🥣" },
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 
-export default function NavInferior({ nombreUsuario }: { nombreUsuario: string }) {
+const ITEM_COMPRAS = { href: "/orden-de-compra", label: "Compras", icon: "🧾" };
+
+export default function NavInferior({
+  nombreUsuario,
+  mostrarCompras,
+}: {
+  nombreUsuario: string;
+  mostrarCompras: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const items = mostrarCompras
+    ? [...ITEMS_BASE.slice(0, 2), ITEM_COMPRAS, ITEMS_BASE[2]]
+    : ITEMS_BASE;
 
   async function salir() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -28,7 +39,7 @@ export default function NavInferior({ nombreUsuario }: { nombreUsuario: string }
         </button>
       </header>
       <nav className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t-2 border-masa-100 flex">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const activo = pathname.startsWith(item.href);
           return (
             <Link
