@@ -32,7 +32,38 @@ if ($cambiosSinGuardar) {
 }
 
 Write-Host "Cambiando a '$Etapa'..." -ForegroundColor Cyan
-git checkout $Etapa --quiet
+
+# OneDrive a veces bloquea un archivo un instante mientras sincroniza, justo
+# cuando Git necesita borrarlo para cambiar de version. Cuando eso pasa, Git
+# se queda esperando que alguien le conteste "si, reintenta" en la consola
+# (algo que nadie ve si esto corre desde un doble clic). Por eso reintentamos
+# solos varias veces, contestandole "si" automaticamente cada vez.
+$maxIntentos = 8
+$exitoso = $false
+for ($intento = 1; $intento -le $maxIntentos; $intento++) {
+    if (Test-Path ".git\index.lock") {
+        Remove-Item ".git\index.lock" -Force -ErrorAction SilentlyContinue
+    }
+    git checkout -- . 2>$null | Out-Null
+
+    1..50 | ForEach-Object { "y" } | git checkout $Etapa --quiet 2>$null | Out-Null
+
+    if ($LASTEXITCODE -eq 0) {
+        $exitoso = $true
+        break
+    }
+
+    if ($intento -lt $maxIntentos) {
+        Write-Host "OneDrive esta tardando en soltar un archivo, reintentando... ($intento/$maxIntentos)" -ForegroundColor Yellow
+        Start-Sleep -Seconds 4
+    }
+}
+
+if (-not $exitoso) {
+    Write-Host ""
+    Write-Host "No se pudo cambiar de version despues de varios intentos." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
 Write-Host "Listo. Estas viendo:" -ForegroundColor Green
