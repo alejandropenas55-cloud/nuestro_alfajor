@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 title Nuestro Alfajor - ETAPA 3
 cd /d "%~dp0"
 
@@ -10,10 +11,20 @@ echo    Solo la ven Alejandro, Javier y Mercedes)
 echo ============================================
 echo.
 
+set INTENTOS=0
+:reintentar_checkout
+if exist ".git\index.lock" del /f /q ".git\index.lock" >nul 2>&1
+git checkout -- . >nul 2>&1
 git checkout etapa-3 --quiet
 if errorlevel 1 (
+    set /a INTENTOS+=1
+    if !INTENTOS! LSS 8 (
+        echo OneDrive esta tardando en soltar un archivo, reintentando... ^(!INTENTOS!/8^)
+        timeout /t 4 /nobreak >nul
+        goto reintentar_checkout
+    )
     echo.
-    echo Hubo un problema cambiando de version.
+    echo Hubo un problema cambiando de version despues de varios intentos.
     echo Sacale una captura de pantalla a esto y mandasela a Alejandro.
     echo.
     pause
