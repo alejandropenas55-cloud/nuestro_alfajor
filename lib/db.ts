@@ -90,12 +90,15 @@ function prepare(sql: string) {
     get: async (...args: any[]) => {
       await ensureSchema();
       const r = await client.execute({ sql, args });
-      return r.rows[0] as any;
+      // Las filas de @libsql/client no son objetos planos (tienen metodos
+      // propios), y Next.js no deja pasar eso de un Server Component a un
+      // Client Component. Se convierten a objetos planos con el spread.
+      return r.rows[0] ? ({ ...r.rows[0] } as any) : undefined;
     },
     all: async (...args: any[]) => {
       await ensureSchema();
       const r = await client.execute({ sql, args });
-      return r.rows as any[];
+      return r.rows.map((row) => ({ ...row })) as any[];
     },
     run: async (...args: any[]) => {
       await ensureSchema();
