@@ -181,6 +181,19 @@ function BloqueCalculo({
         <div className="card text-center text-dulce-500 py-6">No hay pedidos pendientes acá.</div>
       ) : (
         <>
+          <div className="card">
+            <p className="font-display text-dulce-700 mb-2">Paquetes a producir</p>
+            <Fila label="Maicena x7" valor={calculo.paquetes.maicenaX7} unidad="paq." />
+            <Fila label="Maicena x14" valor={calculo.paquetes.maicenaX14} unidad="paq." />
+            <Fila label="Frutal x7" valor={calculo.paquetes.frutalX7} unidad="paq." />
+            <Fila label="Santafesino x7" valor={calculo.paquetes.santafesinoX7} unidad="paq." />
+            <Fila label="Pepas DDL" valor={calculo.paquetes.pepasDDL} unidad="band." />
+            <Fila label="Pepas Membrillo" valor={calculo.paquetes.pepasMembrillo} unidad="band." />
+            <Fila label="Pepas Arándano" valor={calculo.paquetes.pepasArandano} unidad="band." />
+            <Fila label="Pepas Batata" valor={calculo.paquetes.pepasBatata} unidad="band." />
+            <Fila label="Pepas Frutos del Bosque" valor={calculo.paquetes.pepasFrutosBosque} unidad="band." />
+          </div>
+
           {calculo.avisoAmasijos && (
             <div className="rounded-2xl bg-alerta-500/10 border-2 border-alerta-500/30 text-alerta-500 px-4 py-3 font-display">
               ⚠️ {calculo.totalAmasijos} amasijos
@@ -284,19 +297,6 @@ function BloqueCalculo({
               </div>
             </>
           )}
-
-          <div className="card">
-            <p className="font-display text-dulce-700 mb-2">Paquetes a producir</p>
-            <Fila label="Maicena x7" valor={calculo.paquetes.maicenaX7} unidad="paq." />
-            <Fila label="Maicena x14" valor={calculo.paquetes.maicenaX14} unidad="paq." />
-            <Fila label="Frutal x7" valor={calculo.paquetes.frutalX7} unidad="paq." />
-            <Fila label="Santafesino x7" valor={calculo.paquetes.santafesinoX7} unidad="paq." />
-            <Fila label="Pepas DDL" valor={calculo.paquetes.pepasDDL} unidad="band." />
-            <Fila label="Pepas Membrillo" valor={calculo.paquetes.pepasMembrillo} unidad="band." />
-            <Fila label="Pepas Arándano" valor={calculo.paquetes.pepasArandano} unidad="band." />
-            <Fila label="Pepas Batata" valor={calculo.paquetes.pepasBatata} unidad="band." />
-            <Fila label="Pepas Frutos del Bosque" valor={calculo.paquetes.pepasFrutosBosque} unidad="band." />
-          </div>
         </>
       )}
     </div>
