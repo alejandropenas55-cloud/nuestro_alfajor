@@ -286,11 +286,16 @@ function BloqueCalculo({
           )}
 
           <div className="card">
-            <p className="font-display text-dulce-700 mb-2">Unidades a producir</p>
-            <Fila label="Alfajores Maicena" valor={calculo.alfajoresMaicena} />
-            <Fila label="Alfajores Frutal" valor={calculo.alfajoresFrutal} />
-            <Fila label="Alfajores Santafesino" valor={calculo.alfajoresSantafesino} />
-            <Fila label="Pepas (unidades)" valor={calculo.pepasUnidades} />
+            <p className="font-display text-dulce-700 mb-2">Paquetes a producir</p>
+            <Fila label="Maicena x7" valor={calculo.paquetes.maicenaX7} unidad="paq." />
+            <Fila label="Maicena x14" valor={calculo.paquetes.maicenaX14} unidad="paq." />
+            <Fila label="Frutal x7" valor={calculo.paquetes.frutalX7} unidad="paq." />
+            <Fila label="Santafesino x7" valor={calculo.paquetes.santafesinoX7} unidad="paq." />
+            <Fila label="Pepas DDL" valor={calculo.paquetes.pepasDDL} unidad="band." />
+            <Fila label="Pepas Membrillo" valor={calculo.paquetes.pepasMembrillo} unidad="band." />
+            <Fila label="Pepas Arándano" valor={calculo.paquetes.pepasArandano} unidad="band." />
+            <Fila label="Pepas Batata" valor={calculo.paquetes.pepasBatata} unidad="band." />
+            <Fila label="Pepas Frutos del Bosque" valor={calculo.paquetes.pepasFrutosBosque} unidad="band." />
           </div>
         </>
       )}

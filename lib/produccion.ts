@@ -87,6 +87,18 @@ export type CalculoProduccion = {
     bandejaAbierta320g: number;
     etiquetaPepas: number;
   };
+  // Paquetes a producir — lo que a producción le sirve ver (no alfajores sueltos).
+  paquetes: {
+    maicenaX7: number;
+    maicenaX14: number;
+    frutalX7: number;
+    santafesinoX7: number;
+    pepasDDL: number;
+    pepasMembrillo: number;
+    pepasArandano: number;
+    pepasBatata: number;
+    pepasFrutosBosque: number;
+  };
   // Etapa 2 — insumos crudos, sin Stock/Faltante todavía (eso es Etapa 1).
   insumosMasa: InsumoCalculado[];
   tapasSantafesino: InsumoCalculado; // unidades a comprar a Don Jesús, trackeable en Stock
@@ -163,11 +175,17 @@ export function calcularProduccion(
   };
 
   // --- Etapa 2: rellenos (por variedad de Pepas, no el agregado) ---
-  const pepasDDL = bandejasPorLineaPepas("Pepas DDL") * 18;
-  const pepasMembrillo = bandejasPorLineaPepas("Pepas Membrillo") * 18;
-  const pepasArandano = bandejasPorLineaPepas("Pepas Arándano") * 18;
-  const pepasBatata = bandejasPorLineaPepas("Pepas Batata") * 18;
-  const pepasFrutosBosque = bandejasPorLineaPepas("Pepas Frutos del Bosque") * 18;
+  const bandejasPepasDDL = bandejasPorLineaPepas("Pepas DDL");
+  const bandejasPepasMembrillo = bandejasPorLineaPepas("Pepas Membrillo");
+  const bandejasPepasArandano = bandejasPorLineaPepas("Pepas Arándano");
+  const bandejasPepasBatata = bandejasPorLineaPepas("Pepas Batata");
+  const bandejasPepasFrutosBosque = bandejasPorLineaPepas("Pepas Frutos del Bosque");
+
+  const pepasDDL = bandejasPepasDDL * 18;
+  const pepasMembrillo = bandejasPepasMembrillo * 18;
+  const pepasArandano = bandejasPepasArandano * 18;
+  const pepasBatata = bandejasPepasBatata * 18;
+  const pepasFrutosBosque = bandejasPepasFrutosBosque * 18;
 
   const insumosRelleno: InsumoCalculado[] = [
     {
@@ -239,6 +257,17 @@ export function calcularProduccion(
       etiquetaCierreX14: paquetesMaicenaX14,
       bandejaAbierta320g: bandejasPepas,
       etiquetaPepas: bandejasPepas,
+    },
+    paquetes: {
+      maicenaX7: paquetesMaicenaX7,
+      maicenaX14: paquetesMaicenaX14,
+      frutalX7: paquetesFrutalX7,
+      santafesinoX7: paquetesSantafesinoX7,
+      pepasDDL: bandejasPepasDDL,
+      pepasMembrillo: bandejasPepasMembrillo,
+      pepasArandano: bandejasPepasArandano,
+      pepasBatata: bandejasPepasBatata,
+      pepasFrutosBosque: bandejasPepasFrutosBosque,
     },
     insumosMasa,
     tapasSantafesino,
