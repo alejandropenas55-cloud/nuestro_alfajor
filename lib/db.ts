@@ -101,11 +101,49 @@ CREATE TABLE IF NOT EXISTS catalogo_productos (
   creado_en TEXT NOT NULL DEFAULT (datetime('now')),
   actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Textos sueltos del catálogo público (Quiénes somos, los chips). Van en una
+-- tabla clave/valor y no en el código para que los dueños los cambien desde
+-- el panel sin depender de un despliegue.
+CREATE TABLE IF NOT EXISTS catalogo_textos (
+  clave TEXT PRIMARY KEY,
+  valor TEXT NOT NULL,
+  actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Condiciones de compra: una fila por condición para poder reordenarlas y
+-- agregar o sacar sin tocar código.
+CREATE TABLE IF NOT EXISTS catalogo_condiciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titulo TEXT NOT NULL,
+  texto TEXT NOT NULL,
+  orden INTEGER NOT NULL DEFAULT 0
+);
 `;
+
+// Columnas agregadas después de que la tabla usuarios ya existía en
+// producción: CREATE TABLE IF NOT EXISTS no las agrega solo. Se intentan
+// una por una y se ignora el error de "duplicate column", que es lo que pasa
+// en todos los arranques salvo el primero.
+const COLUMNAS_NUEVAS = [
+  "ALTER TABLE usuarios ADD COLUMN intentos_fallidos INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE usuarios ADD COLUMN bloqueado_hasta TEXT",
+];
 
 let schemaReady: Promise<unknown> | null = null;
 function ensureSchema() {
-  if (!schemaReady) schemaReady = client.executeMultiple(SCHEMA_SQL);
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      await client.executeMultiple(SCHEMA_SQL);
+      for (const sql of COLUMNAS_NUEVAS) {
+        try {
+          await client.execute(sql);
+        } catch {
+          // La columna ya existe: es el caso normal, no hay nada que hacer.
+        }
+      }
+    })();
+  }
   return schemaReady;
 }
 
