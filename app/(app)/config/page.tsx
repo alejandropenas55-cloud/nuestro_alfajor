@@ -2,6 +2,7 @@ import db from "@/lib/db";
 import { listarProductos } from "@/lib/pricing";
 import { getSesion, puedeEditarPrecios } from "@/lib/session";
 import PanelPrecios from "@/components/PanelPrecios";
+import PanelCambiarPin from "@/components/PanelCambiarPin";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export default async function ConfigPage() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="font-display text-touch-xl text-dulce-700">Config</h1>
+
+      <PanelCambiarPin nombre={sesion?.nombre ?? ""} />
 
       <PanelPrecios
         productosIniciales={productos}

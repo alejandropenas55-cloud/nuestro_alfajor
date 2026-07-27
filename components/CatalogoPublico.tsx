@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CatalogoProducto } from "@/lib/catalogo";
+import type { CatalogoProducto, CatalogoTextos } from "@/lib/catalogo";
 import { hexRgba, precioAR } from "@/lib/formato";
 
 // --------------------------------------------------------------------------
@@ -10,48 +10,18 @@ import { hexRgba, precioAR } from "@/lib/formato";
 // de entrada de pedidos sigue siendo uno solo (Pedidos/Remito del panel).
 // --------------------------------------------------------------------------
 
-const CONDICIONES: Array<[string, string]> = [
-  [
-    "Mínimo de compra",
-    "15 paquetes (se pueden pedir surtidos). Para la Bandeja Maicena x14, el mínimo es de 10 bandejas.",
-  ],
-  [
-    "Anticipación de pedidos",
-    "Mínimo 3 días. Grupos de venta, instituciones y compras de mayor volumen deben reservar previamente la fecha de entrega.",
-  ],
-  [
-    "Producción artesanal",
-    "Cada pedido se elabora especialmente; se trabaja con reserva previa.",
-  ],
-  [
-    "Forma de pago",
-    "Al momento del retiro: 50% efectivo + 50% transferencia, o 100% efectivo.",
-  ],
-  [
-    "Horarios de retiro",
-    "Lunes a viernes de 17:00 a 18:30 hs · Sábados de 9:00 a 11:00 hs.",
-  ],
-  ["Retiro", "Prof. Diego Mackinnon 1590, Paraná, Entre Ríos."],
-  // OJO: 30 días es el valor vigente. Hay un estudio bromatológico en trámite
-  // para extenderlo, pero SIN resultado todavía. No subir este número hasta
-  // que el laboratorio lo confirme por escrito.
-  ["Vida útil", "30 días en condiciones adecuadas de almacenamiento."],
-];
-
-const CHIPS = [
-  "Habilitación bromatológica vigente",
-  "RNPA registrado",
-  "Producción 100% propia",
-];
-
 type Estilo = "foto" | "etiqueta";
 
 export default function CatalogoPublico({
   productos,
+  textos,
   whatsapp,
+  instagram,
 }: {
   productos: CatalogoProducto[];
+  textos: CatalogoTextos;
   whatsapp: string;
+  instagram: string;
 }) {
   // La cantidad se guarda como TEXTO tal cual lo tipea el cliente. Así el
   // input nunca pelea con el estado mientras escribe (ej. tipear "30": si
@@ -146,14 +116,11 @@ export default function CatalogoPublico({
         {/* ---------------- Quiénes somos ---------------- */}
         <section className="mx-5 rounded-2xl bg-white border border-cat-borde p-6">
           <h2 className="font-display text-xl text-cat-tinta">Quiénes somos</h2>
-          <p className="mt-3 text-cat-suave leading-relaxed">
-            Somos una familia de Paraná: Javier, Mercedes y Francisco. Hacemos
-            cada alfajor a mano, en tandas chicas, cuidando la receta y el punto
-            del dulce de leche. Hoy trabajamos con escuelas, clubes y empresas
-            de la zona que eligen nuestros alfajores para sus ventas y eventos.
+          <p className="mt-3 text-cat-suave leading-relaxed whitespace-pre-line">
+            {textos.quienes_somos}
           </p>
           <ul className="mt-5 flex flex-wrap gap-2">
-            {CHIPS.map((c) => (
+            {textos.chips.map((c) => (
               <li
                 key={c}
                 className="rounded-full bg-cat-fondo border border-cat-borde px-3 py-1.5 text-xs font-semibold text-cat-caramelo"
@@ -205,10 +172,10 @@ export default function CatalogoPublico({
             Condiciones de compra
           </h2>
           <dl className="mt-4 flex flex-col gap-3">
-            {CONDICIONES.map(([titulo, texto]) => (
-              <div key={titulo} className="border-b border-cat-borde pb-3 last:border-0 last:pb-0">
-                <dt className="font-semibold text-sm text-cat-caramelo">{titulo}</dt>
-                <dd className="text-cat-suave text-sm leading-relaxed mt-0.5">{texto}</dd>
+            {textos.condiciones.map((c) => (
+              <div key={c.id} className="border-b border-cat-borde pb-3 last:border-0 last:pb-0">
+                <dt className="font-semibold text-sm text-cat-caramelo">{c.titulo}</dt>
+                <dd className="text-cat-suave text-sm leading-relaxed mt-0.5">{c.texto}</dd>
               </div>
             ))}
           </dl>
@@ -223,12 +190,22 @@ export default function CatalogoPublico({
               <br />
               Paraná, Entre Ríos
             </p>
-            <p className="mt-3 text-sm text-cat-suave">
-              WhatsApp:{" "}
-              <a href={`https://wa.me/${whatsapp}`} className="font-semibold text-cat-caramelo underline underline-offset-2">
-                343 507-8807
+            <div className="mt-4 flex flex-col gap-2 items-center">
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-cat-caramelo underline underline-offset-2"
+              >
+                <IconoWhatsapp /> 343 507-8807
               </a>
-            </p>
+              <a
+                href={`https://instagram.com/${instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-cat-caramelo underline underline-offset-2"
+              >
+                <IconoInstagram /> @{instagram}
+              </a>
+            </div>
             <p className="mt-3 text-xs text-cat-suave">
               Retiros: lunes a viernes de 17:00 a 18:30 hs · sábados de 9:00 a
               11:00 hs
@@ -576,6 +553,28 @@ function BarraResumen({
 }
 
 // ---------------------------------------------------------------------------
+
+/* Iconos en SVG inline: no se puede depender de una librería externa ni de
+   una fuente de íconos, el catálogo tiene que cargar rápido en un celular
+   con datos móviles. */
+function IconoWhatsapp() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+      <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35z" />
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.02h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.17 8.17 0 0 1-1.25-4.36c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.21-8.24 8.21z" />
+    </svg>
+  );
+}
+
+function IconoInstagram() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 function aEntero(v: string | undefined): number {
   const n = parseInt(v ?? "", 10);

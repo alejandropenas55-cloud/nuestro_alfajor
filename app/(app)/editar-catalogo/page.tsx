@@ -1,12 +1,16 @@
 import { getSesion, puedeEditarPrecios } from "@/lib/session";
-import { listarCatalogoCompleto } from "@/lib/catalogo";
+import { leerTextos, listarCatalogoCompleto } from "@/lib/catalogo";
 import PanelCatalogo from "@/components/PanelCatalogo";
+import PanelTextosCatalogo from "@/components/PanelTextosCatalogo";
 
 export const dynamic = "force-dynamic";
 
 export default async function CatalogoInternoPage() {
   const sesion = await getSesion();
-  const productos = await listarCatalogoCompleto();
+  const [productos, textos] = await Promise.all([
+    listarCatalogoCompleto(),
+    leerTextos(),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -25,6 +29,11 @@ export default async function CatalogoInternoPage() {
           Abrir el catálogo público ↗
         </a>
       </div>
+
+      <PanelTextosCatalogo
+        textosIniciales={textos}
+        puedeEditar={puedeEditarPrecios(sesion?.rol ?? "")}
+      />
 
       <PanelCatalogo
         productosIniciales={productos}
