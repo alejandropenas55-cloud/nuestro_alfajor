@@ -13,6 +13,16 @@ import { createClient, type Client } from "@libsql/client";
 const client: Client = createClient({
   url: process.env.TURSO_DATABASE_URL!,
   authToken: process.env.TURSO_AUTH_TOKEN,
+  // El driver habla con Turso por HTTP usando fetch(). Next.js reemplaza el
+  // fetch global por uno que cachea las respuestas en su "Data Cache", y la
+  // clave incluye el cuerpo del pedido — o sea, el texto de la consulta SQL.
+  // Resultado: una consulta ya vista devuelve el resultado VIEJO aunque la
+  // base haya cambiado, y el caché sobrevive a reiniciar el servidor porque
+  // vive en .next/cache/fetch-cache. Se detectó al editar el catálogo y no
+  // verse el cambio en /catalogo. La base nunca se debe cachear: se fuerza
+  // no-store en cada consulta.
+  fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, cache: "no-store" }),
 });
 
 const SCHEMA_SQL = `
@@ -75,6 +85,30 @@ CREATE TABLE IF NOT EXISTS stock_insumos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nombre TEXT NOT NULL UNIQUE,
   cantidad REAL NOT NULL DEFAULT 0,
+  actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Catálogo público: entidad COMERCIAL, separada a propósito de "productos"
+-- (que es la entidad operativa de pedidos/producción con precios por fecha
+-- de corte). produccion_ref queda como vínculo opcional a productos(id)
+-- para cruzar catálogo <-> producción en una etapa futura, sin obligar ahora.
+-- La foto vive como BLOB acá mismo (comprimida a ~100-200KB desde el editor)
+-- porque esta app no tiene un storage de archivos aparte y el catálogo son
+-- ~10 fotos chicas; se sirve por /api/catalogo/[id]/foto con caché.
+CREATE TABLE IF NOT EXISTS catalogo_productos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  peso TEXT NOT NULL DEFAULT '',
+  descripcion TEXT NOT NULL DEFAULT '',
+  precio REAL,                          -- NULL = "Precio a confirmar"
+  badge TEXT NOT NULL DEFAULT '',
+  tag_color TEXT NOT NULL DEFAULT '#B14539',
+  foto BLOB,                            -- NULL = placeholder "Foto próximamente"
+  foto_mime TEXT,
+  activo INTEGER NOT NULL DEFAULT 1,
+  orden INTEGER NOT NULL DEFAULT 0,
+  produccion_ref INTEGER REFERENCES productos(id),
+  creado_en TEXT NOT NULL DEFAULT (datetime('now')),
   actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );
 `;

@@ -10,6 +10,9 @@ const ITEMS_BASE = [
 ];
 
 const ITEM_COMPRAS = { href: "/orden-de-compra", label: "Compras", icon: "🧾" };
+// El catálogo público muestra precios de venta: mismo criterio de acceso
+// que Compras (Alejandro/Javier/Mercedes).
+const ITEM_CATALOGO = { href: "/editar-catalogo", label: "Catálogo", icon: "🏷️" };
 
 export default function NavInferior({
   nombreUsuario,
@@ -21,7 +24,7 @@ export default function NavInferior({
   const pathname = usePathname();
   const router = useRouter();
   const items = mostrarCompras
-    ? [...ITEMS_BASE.slice(0, 2), ITEM_COMPRAS, ITEMS_BASE[2]]
+    ? [...ITEMS_BASE.slice(0, 2), ITEM_COMPRAS, ITEM_CATALOGO, ITEMS_BASE[2]]
     : ITEMS_BASE;
 
   async function salir() {
@@ -45,12 +48,15 @@ export default function NavInferior({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 font-display ${
+              className={`flex-1 flex flex-col items-center gap-1 py-3 font-display min-w-0 ${
                 activo ? "text-dulce-600" : "text-dulce-400"
               }`}
             >
               <span className="text-2xl">{item.icon}</span>
-              <span className="text-sm">{item.label}</span>
+              {/* Con 5 pestañas (roles con Compras + Catálogo) el ancho por
+                  ítem se achica: el texto baja un escalón para que "Producción"
+                  no se corte en pantallas de 360 px. */}
+              <span className={items.length > 4 ? "text-[11px]" : "text-sm"}>{item.label}</span>
             </Link>
           );
         })}

@@ -26,6 +26,19 @@ module.exports = {
         alerta: {
           500: "#B5482F",
         },
+        // Catálogo público (/catalogo): paleta cálida artesanal del prototipo
+        // ya validado con el cliente. Vive aparte de la del panel interno
+        // porque el público es otro (clientes, no el equipo) y el registro
+        // visual es de vidriera, no de herramienta de trabajo.
+        cat: {
+          fondo: "#FBF5EA",   // cream
+          borde: "#E8DCC6",
+          caramelo: "#A9642E",
+          tinta: "#2E2013",
+          suave: "#6B5540",
+          navy: "#1F2A44",    // tira de crédito Palanca, secundaria
+          wsp: "#3DA35D",     // verde WhatsApp: SOLO para el botón de acción
+        },
       },
       fontFamily: {
         // Display: cálida, con carácter de cartel de panadería de barrio, sin ser cursiva difícil de leer.
