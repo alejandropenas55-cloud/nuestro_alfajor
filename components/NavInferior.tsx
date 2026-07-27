@@ -3,15 +3,29 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const ITEMS = [
+const ITEMS_BASE = [
   { href: "/pedidos", label: "Pedidos", icon: "📦" },
   { href: "/produccion", label: "Producción", icon: "🥣" },
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 
-export default function NavInferior({ nombreUsuario }: { nombreUsuario: string }) {
+// El catálogo público muestra precios de venta, así que lo edita el mismo
+// grupo que puede tocar precios (Alejandro/Javier/Mercedes). Francisco no
+// lo ve, igual que no edita precios.
+const ITEM_CATALOGO = { href: "/editar-catalogo", label: "Catálogo", icon: "🏷️" };
+
+export default function NavInferior({
+  nombreUsuario,
+  mostrarCatalogo,
+}: {
+  nombreUsuario: string;
+  mostrarCatalogo: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const items = mostrarCatalogo
+    ? [...ITEMS_BASE.slice(0, 2), ITEM_CATALOGO, ITEMS_BASE[2]]
+    : ITEMS_BASE;
 
   async function salir() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -28,18 +42,21 @@ export default function NavInferior({ nombreUsuario }: { nombreUsuario: string }
         </button>
       </header>
       <nav className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t-2 border-masa-100 flex">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const activo = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 font-display ${
+              className={`flex-1 flex flex-col items-center gap-1 py-3 font-display min-w-0 ${
                 activo ? "text-dulce-600" : "text-dulce-400"
               }`}
             >
               <span className="text-2xl">{item.icon}</span>
-              <span className="text-sm">{item.label}</span>
+              {/* Cuando aparece la pestaña Catálogo el ancho por ítem se
+                  achica: el texto baja un escalón para que "Producción" no se
+                  corte en pantallas de 360 px. */}
+              <span className={items.length > 3 ? "text-[11px]" : "text-sm"}>{item.label}</span>
             </Link>
           );
         })}
