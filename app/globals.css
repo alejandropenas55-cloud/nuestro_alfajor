@@ -156,6 +156,25 @@
 .may-total b { font-family: var(--display); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
 
 .may-sim { background: var(--papel-2); border: 1.5px solid var(--linea); border-radius: 4px; padding: 1.25rem; }
+/* Selector entre calcular el margen por porcentaje o en pesos. */
+.may-modo { display: inline-flex; gap: .3rem; padding: .25rem; border: 1.5px solid var(--linea); border-radius: 4px; background: var(--papel); }
+.may-modo button {
+  cursor: pointer; border: 0; background: transparent; color: var(--tinta-2);
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+  font-size: .95rem; padding: .4rem .9rem; border-radius: 3px;
+}
+.may-modo button.activa { background: var(--tinta); color: var(--papel); }
+
+.may-pesos { margin-top: 1rem; }
+.may-pesos label { display: block; font-size: .8rem; color: var(--tinta-2); margin-bottom: .35rem; }
+.may-pesos-campo { display: inline-flex; align-items: center; gap: .4rem; }
+.may-pesos-campo span { font-family: var(--display); font-size: 1.9rem; color: var(--dulce); }
+.may-pesos-campo input {
+  width: 160px; padding: .4rem .7rem; border-radius: 3px;
+  border: 1.5px solid var(--linea); background: var(--papel); color: var(--tinta);
+  font-family: var(--display); font-size: 1.9rem; font-variant-numeric: tabular-nums;
+}
+
 .may-slider { width: 100%; accent-color: var(--dulce); margin-top: .5rem; }
 .may-markup { font-family: var(--display); font-size: 1.5rem; margin: .2rem 0 0; }
 .may-sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
