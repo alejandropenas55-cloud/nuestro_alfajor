@@ -17,6 +17,10 @@ import { hexRgba, precioAR } from "@/lib/formato";
 
 type Solapa = "quienes" | "condiciones" | "pedidos" | "ganas";
 
+// El margen se puede pensar de dos maneras y cada revendedor usa la suya:
+// un porcentaje sobre el costo, o "le sumo tantos pesos a cada paquete".
+type ModoMargen = "porcentaje" | "pesos";
+
 const SOLAPAS: Array<[Solapa, string]> = [
   ["quienes", "Quiénes somos"],
   ["condiciones", "Condiciones comerciales"],
@@ -39,7 +43,11 @@ export default function Mayoristas({
   // Cantidad como TEXTO: los pedidos mayoristas son por volumen y hay que
   // poder tipear "30" sin que el campo se reescriba en cada tecla.
   const [cant, setCant] = useState<Record<number, string>>({});
+  const [modoMargen, setModoMargen] = useState<ModoMargen>("porcentaje");
   const [markup, setMarkup] = useState(50);
+  // Pesos que se le suman a CADA paquete. Se guarda como texto para poder
+  // escribir el número directo sin pelear con el campo.
+  const [pesosExtra, setPesosExtra] = useState("1000");
 
   const elegidos = useMemo(
     () =>
@@ -236,25 +244,63 @@ export default function Mayoristas({
           <section>
             <Rotulo titulo="Cuánto ganás" nota="Simulador de reventa" />
             <div className="may-sim">
-              <label htmlFor="markup">
-                <b>Margen que le querés poner a la reventa</b>
-              </label>
-              <p className="may-plomo" style={{ fontSize: ".86rem", margin: ".3rem 0 0" }}>
+              <b>Margen que le querés poner a la reventa</b>
+              <p className="may-plomo" style={{ fontSize: ".86rem", margin: ".3rem 0 .9rem" }}>
                 El precio de reventa lo definís vos: Nuestro Alfajor no fija precio
-                de venta al público. Movés la barra y ves cómo queda tu ganancia
-                sobre el pedido que armaste en la solapa Pedidos.
+                de venta al público. Ponelo como te resulte más cómodo y ves cómo
+                queda tu ganancia sobre el pedido que armaste en la solapa Pedidos.
               </p>
-              <input
-                id="markup"
-                className="may-slider"
-                type="range"
-                min={10}
-                max={120}
-                step={5}
-                value={markup}
-                onChange={(e) => setMarkup(Number(e.target.value))}
-              />
-              <p className="may-markup">+{markup}% sobre el costo</p>
+
+              <div className="may-modo" role="tablist" aria-label="Forma de calcular el margen">
+                <button
+                  role="tab"
+                  aria-selected={modoMargen === "porcentaje"}
+                  className={modoMargen === "porcentaje" ? "activa" : ""}
+                  onClick={() => setModoMargen("porcentaje")}
+                >
+                  Por porcentaje
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={modoMargen === "pesos"}
+                  className={modoMargen === "pesos" ? "activa" : ""}
+                  onClick={() => setModoMargen("pesos")}
+                >
+                  Por pesos
+                </button>
+              </div>
+
+              {modoMargen === "porcentaje" ? (
+                <>
+                  <input
+                    id="markup"
+                    className="may-slider"
+                    type="range"
+                    min={10}
+                    max={120}
+                    step={5}
+                    value={markup}
+                    onChange={(e) => setMarkup(Number(e.target.value))}
+                    aria-label="Porcentaje sobre el costo"
+                  />
+                  <p className="may-markup">+{markup}% sobre el costo</p>
+                </>
+              ) : (
+                <div className="may-pesos">
+                  <label htmlFor="pesos-extra">Le sumo a cada paquete</label>
+                  <div className="may-pesos-campo">
+                    <span>$</span>
+                    <input
+                      id="pesos-extra"
+                      type="text"
+                      inputMode="numeric"
+                      value={pesosExtra}
+                      placeholder="0"
+                      onChange={(e) => setPesosExtra(e.target.value.replace(/[^\d]/g, ""))}
+                    />
+                  </div>
+                </div>
+              )}
 
               {elegidos.length === 0 ? (
                 <div className="may-vacio">
@@ -266,7 +312,12 @@ export default function Mayoristas({
                   </button>
                 </div>
               ) : (
-                <Simulador elegidos={elegidos} markup={markup} />
+                <Simulador
+                  elegidos={elegidos}
+                  modo={modoMargen}
+                  markup={markup}
+                  pesosExtra={aEntero(pesosExtra)}
+                />
               )}
             </div>
           </section>
@@ -400,14 +451,31 @@ function Tarjeta({
 
 function Simulador({
   elegidos,
+  modo,
   markup,
+  pesosExtra,
 }: {
   elegidos: Array<{ p: CatalogoProducto; q: number }>;
+  modo: ModoMargen;
   markup: number;
+  pesosExtra: number;
 }) {
-  const pct = markup / 100;
-  const costo = elegidos.reduce((a, { p, q }) => a + (p.precio ?? 0) * q, 0);
-  const venta = costo * (1 + pct);
+  // Por porcentaje, el precio de reventa es el costo más un %. Por pesos, se
+  // le suma el mismo importe a CADA paquete — que es como lo piensa el que
+  // revende: "le pongo mil pesos a cada uno".
+  const ventaUnitaria = (p: CatalogoProducto) =>
+    modo === "porcentaje"
+      ? (p.precio ?? 0) * (1 + markup / 100)
+      : (p.precio ?? 0) + pesosExtra;
+
+  const filas = elegidos.map(({ p, q }) => {
+    const costo = (p.precio ?? 0) * q;
+    const venta = ventaUnitaria(p) * q;
+    return { p, q, costo, venta, unitaria: ventaUnitaria(p) };
+  });
+
+  const costo = filas.reduce((a, f) => a + f.costo, 0);
+  const venta = filas.reduce((a, f) => a + f.venta, 0);
   const ganancia = venta - costo;
 
   return (
@@ -416,33 +484,37 @@ function Simulador({
         <Dato etiqueta="Te cuesta" valor={precioAR(costo)} />
         <Dato etiqueta="Vendés en" valor={precioAR(venta)} />
         <Dato etiqueta="Ganás" valor={precioAR(ganancia)} />
-        <Dato etiqueta="Margen sobre venta" valor={venta > 0 ? Math.round((ganancia / venta) * 100) + "%" : "0%"} />
+        <Dato
+          etiqueta={modo === "porcentaje" ? "Margen sobre venta" : "Equivale a"}
+          valor={
+            modo === "porcentaje"
+              ? (venta > 0 ? Math.round((ganancia / venta) * 100) : 0) + "%"
+              : "+" + (costo > 0 ? Math.round((ganancia / costo) * 100) : 0) + "%"
+          }
+        />
       </div>
+
       <div className="may-tabla">
         <table>
           <thead>
             <tr>
               <th>Producto</th>
               <th>Cant.</th>
-              <th>Costo</th>
-              <th>Reventa</th>
+              <th>Costo c/u</th>
+              <th>Revendés c/u</th>
               <th>Ganancia</th>
             </tr>
           </thead>
           <tbody>
-            {elegidos.map(({ p, q }) => {
-              const c = (p.precio ?? 0) * q;
-              const v = c * (1 + pct);
-              return (
-                <tr key={p.id}>
-                  <td>{p.nombre}</td>
-                  <td>{q}</td>
-                  <td>{precioAR(c)}</td>
-                  <td>{precioAR(v)}</td>
-                  <td>{precioAR(v - c)}</td>
-                </tr>
-              );
-            })}
+            {filas.map((f) => (
+              <tr key={f.p.id}>
+                <td>{f.p.nombre}</td>
+                <td>{f.q}</td>
+                <td>{precioAR(f.p.precio ?? 0)}</td>
+                <td>{precioAR(f.unitaria)}</td>
+                <td>{precioAR(f.venta - f.costo)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
