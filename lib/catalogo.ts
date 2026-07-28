@@ -21,7 +21,12 @@ export type CatalogoProducto = {
   nombre: string;
   peso: string;
   descripcion: string;
+  /** Precio MAYORISTA. Se llama así porque era el único cuando nació la tabla. */
   precio: number | null;
+  /** Consumidor final (/catalogo). */
+  precio_minorista: number | null;
+  /** Distribuidores (/distribuidor). */
+  precio_distribuidor: number | null;
   badge: string;
   tag_color: string;
   activo: number;
@@ -36,8 +41,9 @@ export type CatalogoProducto = {
 
 // Columnas sin el BLOB de la foto: las listas nunca deben arrastrar las
 // imágenes en cada consulta.
-const COLUMNAS = `id, nombre, peso, descripcion, precio, badge, tag_color,
-  activo, orden, minimo_propio,
+const COLUMNAS = `id, nombre, peso, descripcion,
+  precio, precio_minorista, precio_distribuidor,
+  badge, tag_color, activo, orden, minimo_propio,
   CASE WHEN foto IS NULL THEN NULL
        ELSE '/api/catalogo/' || id || '/foto?v=' || replace(replace(actualizado_en, ' ', '_'), ':', '-')
   END AS foto_url`;
@@ -91,6 +97,11 @@ export type CatalogoTextos = {
   // de las condiciones diría una cosa y el validador del pedido otra.
   min_paquetes: number;
 };
+
+// Lista y precioDeLista viven en lib/formato.ts: los usan componentes de
+// cliente, y este archivo importa la base de datos — traerlo al navegador
+// rompe el bundle.
+export type { Lista } from "./formato";
 
 export async function leerTextos(): Promise<CatalogoTextos> {
   await seedSiVacio();
@@ -199,7 +210,10 @@ let seedListo = false;
 // lote son idempotentes, así que volver a correrlo no duplica ni pisa nada
 // que el dueño haya editado.
 const CLAVE_SEED = "seed_version";
-const VERSION_SEED = 2;
+// Subir este número cuando se agrega algo a los ajustes. Ojo: subirlo mientras
+// todavía se está escribiendo el contenido quema la versión — el servidor de
+// desarrollo la graba en el primer render y después ya no vuelve a correr.
+const VERSION_SEED = 4;
 
 /**
  * Siembra el contenido inicial UNA sola vez.
@@ -260,6 +274,18 @@ async function seedSiVacio() {
     {
       sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
       args: ["min_paquetes", String(MIN_PAQUETES)],
+    },
+    // Al aparecer las tres listas, los productos que ya existían solo tenían
+    // el precio mayorista. Se copia a las otras dos para que ninguna página
+    // quede mostrando "Precio a confirmar" de un día para el otro. El dueño
+    // después carga los números reales de cada canal.
+    {
+      sql: "UPDATE catalogo_productos SET precio_minorista = precio WHERE precio_minorista IS NULL AND precio IS NOT NULL",
+      args: [],
+    },
+    {
+      sql: "UPDATE catalogo_productos SET precio_distribuidor = precio WHERE precio_distribuidor IS NULL AND precio IS NOT NULL",
+      args: [],
     },
     {
       sql: "UPDATE catalogo_productos SET minimo_propio = ? WHERE nombre = ? AND minimo_propio IS NULL",

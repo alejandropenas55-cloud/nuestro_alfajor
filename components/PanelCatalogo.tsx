@@ -23,7 +23,10 @@ type Borrador = {
   nombre: string;
   peso: string;
   descripcion: string;
-  precio: string; // "" = a confirmar
+  // Las tres listas. "" = a confirmar (no muestra número en esa página).
+  precio_minorista: string;
+  precio: string; // mayorista
+  precio_distribuidor: string;
   badge: string;
   tag_color: string;
   minimo_propio: string; // "" = entra en el mínimo general surtido
@@ -128,7 +131,9 @@ export default function PanelCatalogo({
             nombre: "",
             peso: "",
             descripcion: "",
+            precio_minorista: "",
             precio: "",
+            precio_distribuidor: "",
             badge: "",
             tag_color: COLORES[0][0],
             minimo_propio: "",
@@ -139,7 +144,7 @@ export default function PanelCatalogo({
             const ok = await llamar("/api/catalogo", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ...b, precio: b.precio === "" ? null : Number(b.precio) }),
+              body: JSON.stringify(conPrecios(b)),
             });
             if (ok) setCreando(false);
           }}
@@ -161,7 +166,7 @@ export default function PanelCatalogo({
               </div>
               <p className="text-xs text-dulce-400 mt-0.5">{p.peso || "sin peso"}</p>
               <p className="text-sm text-dulce-600 mt-1">
-                {p.precio === null ? "Precio a confirmar" : precioAR(p.precio)}
+                {resumenPrecios(p)}
               </p>
               {p.badge && (
                 <span
@@ -237,7 +242,9 @@ export default function PanelCatalogo({
                   nombre: p.nombre,
                   peso: p.peso,
                   descripcion: p.descripcion,
+                  precio_minorista: p.precio_minorista === null ? "" : String(p.precio_minorista),
                   precio: p.precio === null ? "" : String(p.precio),
+                  precio_distribuidor: p.precio_distribuidor === null ? "" : String(p.precio_distribuidor),
                   badge: p.badge,
                   tag_color: p.tag_color,
                   minimo_propio: p.minimo_propio ? String(p.minimo_propio) : "",
@@ -245,10 +252,7 @@ export default function PanelCatalogo({
                 ocupado={ocupado}
                 onCancelar={() => setEditando(null)}
                 onGuardar={async (b) => {
-                  const ok = await guardar(p.id, {
-                    ...b,
-                    precio: b.precio === "" ? null : Number(b.precio),
-                  });
+                  const ok = await guardar(p.id, conPrecios(b));
                   if (ok) setEditando(null);
                 }}
               />
@@ -261,6 +265,27 @@ export default function PanelCatalogo({
 }
 
 // ---------------------------------------------------------------------------
+
+/** Los tres precios viajan igual: campo vacío = "a confirmar" (NULL). */
+function conPrecios(b: Borrador) {
+  const n = (v: string) => (v.trim() === "" ? null : Number(v));
+  return {
+    ...b,
+    precio_minorista: n(b.precio_minorista),
+    precio: n(b.precio),
+    precio_distribuidor: n(b.precio_distribuidor),
+  };
+}
+
+/** Las tres listas en una línea, para ver de un vistazo si falta cargar alguna. */
+function resumenPrecios(p: CatalogoProducto) {
+  const v = (x: number | null) => (x === null ? "—" : precioAR(x));
+  return (
+    <span className="tabular-nums">
+      Final {v(p.precio_minorista)} · Mayor {v(p.precio)} · Distrib {v(p.precio_distribuidor)}
+    </span>
+  );
+}
 
 function Miniatura({ producto: p }: { producto: CatalogoProducto }) {
   if (!p.foto_url) {
@@ -312,7 +337,6 @@ function Formulario({
   onCancelar: () => void;
 }) {
   const [b, setB] = useState<Borrador>(inicial);
-  const [aConfirmar, setAConfirmar] = useState(inicial.precio === "");
   const set = (k: keyof Borrador, v: string) => setB((prev) => ({ ...prev, [k]: v }));
 
   return (
@@ -347,30 +371,36 @@ function Formulario({
         />
       </Campo>
 
-      <Campo label="Precio por paquete">
-        <label className="flex items-center gap-2 text-sm text-dulce-600 mb-2">
-          <input
-            type="checkbox"
-            className="w-5 h-5"
-            checked={aConfirmar}
-            onChange={(e) => {
-              setAConfirmar(e.target.checked);
-              if (e.target.checked) set("precio", "");
-            }}
-          />
-          Precio a confirmar (no muestra número en el catálogo)
-        </label>
-        {!aConfirmar && (
-          <input
-            className="input-grande !text-base !py-3"
-            type="text"
-            inputMode="numeric"
-            value={b.precio}
-            onChange={(e) => set("precio", e.target.value.replace(/[^\d]/g, ""))}
-            placeholder="2500"
-          />
-        )}
-      </Campo>
+      {/* Las tres listas se cargan a mano, una por canal: los precios
+          comerciales casi nunca salen de aplicarle un porcentaje a otro. */}
+      <div className="rounded-2xl border-2 border-masa-100 p-3 flex flex-col gap-3">
+        <p className="text-sm font-semibold text-dulce-600">Precios por paquete</p>
+        <PrecioCanal
+          label="Consumidor final"
+          detalle="Lo que ve el cliente en el catálogo"
+          valor={b.precio_minorista}
+          onChange={(v) => set("precio_minorista", v)}
+          placeholder="3000"
+        />
+        <PrecioCanal
+          label="Mayorista"
+          detalle="Escuelas, clubes, empresas y revendedores"
+          valor={b.precio}
+          onChange={(v) => set("precio", v)}
+          placeholder="2500"
+        />
+        <PrecioCanal
+          label="Distribuidor"
+          detalle="Sin mínimo de compra"
+          valor={b.precio_distribuidor}
+          onChange={(v) => set("precio_distribuidor", v)}
+          placeholder="2200"
+        />
+        <p className="text-xs text-dulce-400">
+          El que dejes vacío aparece como &quot;Precio a confirmar&quot; en esa
+          página. Las otras dos no se ven afectadas.
+        </p>
+      </div>
 
       <Campo label="Mínimo de compra propio (opcional)">
         <input
@@ -425,6 +455,41 @@ function Formulario({
         <button onClick={onCancelar} className="btn-secundario !py-3 !text-base !px-5">
           Cancelar
         </button>
+      </div>
+    </div>
+  );
+}
+
+function PrecioCanal({
+  label,
+  detalle,
+  valor,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  detalle: string;
+  valor: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-dulce-700">{label}</p>
+        <p className="text-xs text-dulce-400 leading-tight">{detalle}</p>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-dulce-500 font-display">$</span>
+        <input
+          className="input-grande !text-base !py-2.5 !px-3 w-28 text-right"
+          type="text"
+          inputMode="numeric"
+          value={valor}
+          placeholder={placeholder}
+          aria-label={`Precio ${label}`}
+          onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))}
+        />
       </div>
     </div>
   );

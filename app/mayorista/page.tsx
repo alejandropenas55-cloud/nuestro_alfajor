@@ -5,13 +5,11 @@ import {
   listarCatalogoPublico,
   WHATSAPP_CATALOGO,
 } from "@/lib/catalogo";
-import Mayoristas from "@/components/Mayoristas";
+import ListaPrecios from "@/components/ListaPrecios";
 
-// Material comercial para distribuidores y revendedores. Lee la MISMA tabla
-// que /catalogo: si el dueño cambia un precio, sube una foto o agrega un
-// producto desde el panel, acá se actualiza solo. Antes esto era un HTML
-// aparte con los precios escritos adentro, y quedaba desactualizado sin que
-// nadie se enterara.
+// Canal mayorista / reventa: escuelas, clubes, empresas y revendedores. Lee
+// la MISMA tabla que /catalogo y /distribuidor, con la lista de precios que
+// le corresponde a este canal.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -20,14 +18,15 @@ export const metadata: Metadata = {
     "Precios mayoristas, mínimos de compra y condiciones para revender Nuestro Alfajor.",
 };
 
-export default async function MayoristasPage() {
+export default async function MayoristaPage() {
   const [productos, textos] = await Promise.all([
     listarCatalogoPublico(),
     leerTextos(),
   ]);
 
   return (
-    <Mayoristas
+    <ListaPrecios
+      lista="mayorista"
       productos={productos}
       textos={textos}
       whatsapp={WHATSAPP_CATALOGO}

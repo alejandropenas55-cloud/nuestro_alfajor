@@ -30,8 +30,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El producto necesita un nombre." }, { status: 400 });
   }
   const precio = normalizarPrecio(body.precio);
-  if (precio === undefined) {
-    return NextResponse.json({ error: "El precio no es válido." }, { status: 400 });
+  const precioMinorista = normalizarPrecio(body.precio_minorista);
+  const precioDistribuidor = normalizarPrecio(body.precio_distribuidor);
+  if (precio === undefined || precioMinorista === undefined || precioDistribuidor === undefined) {
+    return NextResponse.json({ error: "Alguno de los precios no es válido." }, { status: 400 });
   }
 
   // Nuevo producto: va al final de la lista salvo que manden orden explícito.
@@ -46,14 +48,16 @@ export async function POST(req: NextRequest) {
 
   const info = await db
     .prepare(
-      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, badge, tag_color, activo, orden, minimo_propio)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, precio_minorista, precio_distribuidor, badge, tag_color, activo, orden, minimo_propio)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
       String(body.peso ?? "").trim(),
       String(body.descripcion ?? "").trim(),
       precio,
+      precioMinorista,
+      precioDistribuidor,
       String(body.badge ?? "").trim(),
       normalizarColor(body.tag_color),
       body.activo === false || body.activo === 0 ? 0 : 1,
