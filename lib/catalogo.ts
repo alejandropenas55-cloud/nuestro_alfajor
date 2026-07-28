@@ -175,49 +175,68 @@ const CONDICIONES: Array<[titulo: string, texto: string]> = [
 ];
 
 let seedListo = false;
+
+// Marca de "la siembra ya corrió". Sin esto, las inserciones idempotentes
+// resucitarían cualquier producto o condición que el dueño haya borrado a
+// propósito desde el editor.
+const CLAVE_SEED = "seed_hecho";
+
+/**
+ * Siembra el contenido inicial UNA sola vez.
+ *
+ * Va todo en un único batch en modo write —o sea, una transacción— y no en un
+ * for con un round-trip por fila. La primera versión insertaba las 7
+ * condiciones de a una y en producción entraron solo 4: la función serverless
+ * se cortó a mitad del bucle, la tabla dejó de estar vacía y las 3 que
+ * faltaban no se insertaron nunca más. Al ser una transacción, ahora entra
+ * todo o no entra nada.
+ *
+ * La marca se escribe dentro del mismo batch: si la transacción falla, la
+ * marca tampoco queda y el próximo render vuelve a intentar.
+ */
 async function seedSiVacio() {
   if (seedListo) return;
+  await db.ensureSchema();
 
-  // Cada tabla se siembra por separado: cuando se agregaron los textos
-  // editables, los productos ya estaban cargados en producción, así que un
-  // único chequeo global habría dejado los textos vacíos para siempre.
-  if (await estaVacia("catalogo_productos")) {
-    for (const [orden, nombre, peso, precio, badge, color, desc] of SEED) {
-      await db
-        .prepare(
-          `INSERT INTO catalogo_productos (orden, nombre, peso, precio, badge, tag_color, descripcion)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
-        )
-        .run(orden, nombre, peso, precio, badge, color, desc);
-    }
+  const yaEsta = (await db
+    .prepare("SELECT 1 AS x FROM catalogo_textos WHERE clave = ?")
+    .get(CLAVE_SEED)) as { x: number } | undefined;
+  if (yaEsta) {
+    seedListo = true;
+    return;
   }
 
-  if (await estaVacia("catalogo_textos")) {
-    await db
-      .prepare("INSERT INTO catalogo_textos (clave, valor) VALUES (?, ?)")
-      .run("quienes_somos", QUIENES_SOMOS);
-    await db
-      .prepare("INSERT INTO catalogo_textos (clave, valor) VALUES (?, ?)")
-      .run("chips", CHIPS);
-  }
-
-  if (await estaVacia("catalogo_condiciones")) {
-    let orden = 1;
-    for (const [titulo, texto] of CONDICIONES) {
-      await db
-        .prepare("INSERT INTO catalogo_condiciones (titulo, texto, orden) VALUES (?, ?, ?)")
-        .run(titulo, texto, orden++);
-    }
-  }
+  await db.client.batch(
+    [
+      ...SEED.map(([orden, nombre, peso, precio, badge, color, desc]) => ({
+        sql: `INSERT INTO catalogo_productos (orden, nombre, peso, precio, badge, tag_color, descripcion)
+              SELECT ?, ?, ?, ?, ?, ?, ?
+              WHERE NOT EXISTS (SELECT 1 FROM catalogo_productos WHERE nombre = ?)`,
+        args: [orden, nombre, peso, precio, badge, color, desc, nombre],
+      })),
+      {
+        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+        args: ["quienes_somos", QUIENES_SOMOS],
+      },
+      {
+        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+        args: ["chips", CHIPS],
+      },
+      ...CONDICIONES.map(([titulo, texto], i) => ({
+        sql: `INSERT INTO catalogo_condiciones (titulo, texto, orden)
+              SELECT ?, ?, ?
+              WHERE NOT EXISTS (SELECT 1 FROM catalogo_condiciones WHERE titulo = ?)`,
+        args: [titulo, texto, i + 1, titulo],
+      })),
+      {
+        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+        args: [CLAVE_SEED, new Date().toISOString()],
+      },
+    ],
+    "write"
+  );
 
   seedListo = true;
-}
-
-async function estaVacia(tabla: string): Promise<boolean> {
-  const fila = (await db.prepare(`SELECT COUNT(*) AS n FROM ${tabla}`).get()) as {
-    n: number;
-  };
-  return Number(fila.n) === 0;
 }
 
 // precio: número >= 0, o null = "precio a confirmar". undefined = inválido.
