@@ -15,6 +15,12 @@ const CAMPOS: Record<string, (v: unknown) => unknown> = {
   tag_color: (v) => normalizarColor(v),
   activo: (v) => (v === false || v === 0 || v === "0" ? 0 : 1),
   orden: (v) => Math.round(Number(v) || 0),
+  // Mínimo de compra propio del producto. Vacío o 0 = entra en el mínimo
+  // general surtido.
+  minimo_propio: (v) => {
+    const n = Math.round(Number(v) || 0);
+    return n > 0 ? n : null;
+  },
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

@@ -25,3 +25,218 @@
 .card {
   @apply rounded-2xl bg-white border-2 border-masa-100 p-5 shadow-sm;
 }
+
+/* --------------------------------------------------------------------------
+   Página mayorista (/mayoristas). Estilo tomado del packaging real: cuadrillé
+   vichy por sabor, cinta negra y condensada pesada — el mismo registro que
+   los envases y la etiqueta "ARTESANAL". Va en CSS plano y no en Tailwind
+   porque es una pieza comercial con su propio sistema, aparte del panel.
+   -------------------------------------------------------------------------- */
+.may {
+  --tinta: #17110C; --tinta-2: #4A3A2C; --papel: #FBF8F2; --papel-2: #F2EBDD;
+  --linea: #DCCFB6; --dulce: #A9642E; --dulce-alto: #8A5220;
+  --verde: #4C7A4A; --rojo: #B14539; --wsp: #2F8B4C;
+  --display: Haettenschweiler, 'Arial Narrow', 'Franklin Gothic Condensed', Impact, sans-serif;
+
+  background: var(--papel);
+  color: var(--tinta);
+  min-height: 100vh;
+  padding-bottom: 7rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.may-ancho, .may-masthead, .may-solapas-inner, .may-barra-inner {
+  max-width: 880px; margin-inline: auto; padding-inline: 1.25rem;
+}
+.may-plomo { color: var(--tinta-2); }
+.may-parrafo { text-wrap: pretty; }
+
+.may-masthead { padding-top: 2.25rem; text-align: center; }
+.may-logo { display: block; width: min(420px, 78vw); height: auto; margin: 0 auto; }
+.may-titulo {
+  font-family: var(--display); text-transform: uppercase;
+  font-size: clamp(1.35rem, 5vw, 2.1rem); letter-spacing: .05em;
+  margin: 1.5rem 0 0; line-height: 1.05; color: var(--dulce-alto); text-wrap: balance;
+}
+.may-kicker {
+  font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--tinta-2); font-weight: 700; margin: .5rem 0 0;
+}
+.may-bajada { max-width: 46ch; margin: 1rem auto 0; color: var(--tinta-2); }
+.may-franja { height: 16px; margin-top: 1.75rem; background-color: #fff; }
+
+.may-solapas {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--papel); border-bottom: 2px solid var(--tinta); margin-top: 1.75rem;
+}
+.may-solapas-inner { display: flex; gap: .35rem; overflow-x: auto; padding-block: .6rem; }
+.may-solapa {
+  flex: 0 0 auto; white-space: nowrap; cursor: pointer;
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+  font-size: 1.02rem; padding: .55rem 1rem; border-radius: 3px;
+  border: 1.5px solid var(--linea); background: var(--papel-2); color: var(--tinta-2);
+}
+.may-solapa.activa { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+
+.may-ancho > section { margin-top: 2.25rem; }
+.may-rotulo {
+  display: flex; align-items: baseline; gap: .8rem;
+  border-bottom: 2px solid var(--tinta); padding-bottom: .5rem; margin-bottom: 1.5rem;
+}
+.may-rotulo h2 {
+  font-family: var(--display); text-transform: uppercase;
+  font-size: clamp(1.5rem, 5vw, 2rem); letter-spacing: .03em; margin: 0; line-height: 1;
+}
+.may-rotulo span {
+  font-size: .7rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--tinta-2); margin-left: auto; white-space: nowrap;
+}
+
+.may-sellos { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.25rem 0 0; }
+.may-sellos li {
+  font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+  border: 1.5px solid var(--linea); border-radius: 999px; padding: .35rem .8rem; color: var(--dulce);
+}
+
+.may-lista { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem; }
+.may-prod {
+  display: grid; grid-template-columns: 12px minmax(280px, 53%) 1fr;
+  background: var(--papel-2); border: 1.5px solid var(--linea);
+  border-radius: 4px; overflow: hidden;
+}
+.may-banda { display: block; }
+.may-prod figure { margin: 0; background: var(--papel); }
+.may-prod img { width: 100%; height: 100%; min-height: 215px; object-fit: cover; display: block; }
+.may-sinfoto {
+  height: 100%; min-height: 215px; display: grid; place-items: center; background-color: #fff;
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: var(--tinta-2); text-align: center;
+}
+.may-cuerpo { padding: 1.1rem 1.15rem; display: flex; flex-direction: column; gap: .55rem; }
+.may-cuerpo h3 {
+  font-family: var(--display); text-transform: uppercase;
+  font-size: 1.3rem; letter-spacing: .02em; margin: 0; line-height: 1.05;
+}
+.may-meta { font-size: .8rem; color: var(--tinta-2); margin: 0; }
+.may-fila-precio { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-top: auto; }
+.may-precio {
+  font-family: var(--display); font-size: 1.6rem; letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+.may-precio small { font-family: inherit; font-size: .68rem; font-weight: 600; color: var(--tinta-2); }
+.may-aviso {
+  font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  border: 1.5px solid currentColor; border-radius: 3px; padding: .15rem .45rem;
+}
+
+.may-stepper { display: flex; align-items: center; gap: .4rem; margin-left: auto; }
+.may-stepper button {
+  width: 38px; height: 38px; border-radius: 3px; cursor: pointer;
+  border: 1.5px solid var(--linea); background: var(--papel);
+  color: var(--dulce); font-family: var(--display); font-size: 1.3rem; line-height: 1;
+}
+.may-stepper input {
+  width: 64px; height: 38px; text-align: center; border-radius: 3px;
+  border: 1.5px solid var(--linea); background: var(--papel); color: var(--tinta);
+  font-family: var(--display); font-size: 1.15rem; font-variant-numeric: tabular-nums;
+}
+.may :focus-visible { outline: 2px solid var(--dulce); outline-offset: 2px; }
+
+.may-chequeo {
+  margin-top: 1.5rem; border: 1.5px solid var(--linea); border-radius: 4px;
+  background: var(--papel-2); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .5rem;
+}
+.may-chequeo-fila { display: flex; gap: .6rem; align-items: baseline; font-size: .88rem; }
+.may-ok { color: var(--verde); font-weight: 800; }
+.may-falta { color: var(--rojo); font-weight: 800; }
+.may-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-top: 2px solid var(--tinta); margin-top: .35rem; padding-top: .6rem;
+}
+.may-total b { font-family: var(--display); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+
+.may-sim { background: var(--papel-2); border: 1.5px solid var(--linea); border-radius: 4px; padding: 1.25rem; }
+.may-slider { width: 100%; accent-color: var(--dulce); margin-top: .5rem; }
+.may-markup { font-family: var(--display); font-size: 1.5rem; margin: .2rem 0 0; }
+.may-sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.may-dato { border-left: 3px solid var(--dulce); padding-left: .75rem; }
+.may-dato span { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .12em; color: var(--tinta-2); }
+.may-dato b { font-family: var(--display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.may-vacio { text-align: center; padding: 1.5rem 0; }
+.may-btn-ir {
+  margin-top: .75rem; cursor: pointer; font-family: var(--display);
+  text-transform: uppercase; letter-spacing: .05em; background: var(--dulce);
+  color: #fff; border: 0; border-radius: 3px; padding: .6rem 1.2rem; font-size: 1rem;
+}
+
+.may-tabla { overflow-x: auto; margin-top: 1.25rem; }
+.may-tabla table { width: 100%; border-collapse: collapse; font-size: .86rem; min-width: 460px; }
+.may-tabla th, .may-tabla td {
+  text-align: right; padding: .5rem .6rem; border-bottom: 1px solid var(--linea);
+  font-variant-numeric: tabular-nums;
+}
+.may-tabla th:first-child, .may-tabla td:first-child { text-align: left; }
+.may-tabla thead th { font-size: .66rem; text-transform: uppercase; letter-spacing: .1em; color: var(--tinta-2); }
+
+.may-pasos { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
+.may-pasos li { display: grid; grid-template-columns: 42px 1fr; gap: 1rem; align-items: start; }
+.may-pasos h3 { font-size: .96rem; margin: 0 0 .15rem; }
+.may-pasos p { margin: 0; }
+.may-num {
+  font-family: var(--display); font-size: 1.5rem; line-height: 1;
+  color: var(--papel); background: var(--tinta);
+  width: 42px; height: 42px; display: grid; place-items: center; border-radius: 3px;
+}
+
+.may-cond { display: flex; flex-direction: column; margin: 0; }
+.may-cond > div { border-bottom: 1px solid var(--linea); padding: .8rem 0; }
+.may-cond > div:last-child { border-bottom: 0; }
+.may-cond dt {
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .04em;
+  font-size: 1rem; color: var(--dulce);
+}
+.may-cond dd { margin: .15rem 0 0; color: var(--tinta-2); font-size: .92rem; }
+
+.may-contacto {
+  text-align: center; border: 1.5px solid var(--linea); border-radius: 4px;
+  padding: 2rem 1.25rem; background: var(--papel-2);
+}
+.may-cinta {
+  display: inline-block; background: var(--tinta); color: var(--papel);
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .06em;
+  padding: .35rem 1.1rem; font-size: 1.1rem;
+  clip-path: polygon(0 0, 100% 0, calc(100% - .7rem) 50%, 100% 100%, 0 100%, .7rem 50%);
+}
+.may-enlaces { display: flex; flex-direction: column; gap: .6rem; align-items: center; margin-top: 1.1rem; }
+.may-enlaces a { color: var(--dulce-alto); font-weight: 600; text-underline-offset: 3px; text-decoration: underline; }
+
+.may-barra {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+  background: var(--papel); border-top: 2px solid var(--tinta);
+  transform: translateY(110%); transition: transform .28s ease;
+  box-shadow: 0 -10px 30px rgba(23, 17, 12, .14);
+}
+.may-barra.visible { transform: translateY(0); }
+.may-barra-inner { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding-block: .9rem; }
+.may-resumen { font-family: var(--display); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.may-wsp {
+  margin-left: auto; background: var(--wsp); color: #fff; text-decoration: none;
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+  font-size: 1.05rem; padding: .7rem 1.4rem; border-radius: 3px;
+}
+.may-wsp[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+
+.may-credito { text-align: center; margin-top: 3rem; padding: 1rem; font-size: .72rem; color: var(--tinta-2); }
+
+/* En pantalla angosta la foto pasa arriba y a todo el ancho: gana presencia
+   sin tapar el texto, que queda entero abajo. */
+@media (max-width: 620px) {
+  .may-prod { grid-template-columns: 12px 1fr; }
+  .may-prod figure, .may-cuerpo { grid-column: 2; }
+  .may-prod img, .may-sinfoto { min-height: 0; aspect-ratio: 3 / 2; height: auto; }
+  .may-stepper { margin-left: 0; }
+  .may-fila-precio { row-gap: .6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .may-barra { transition: none; }
+}

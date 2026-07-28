@@ -28,6 +28,17 @@ export async function PUT(req: NextRequest) {
     await guardarTexto("quienes_somos", body.quienes_somos.trim());
   }
 
+  if ("min_paquetes" in body) {
+    const n = Math.round(Number(body.min_paquetes) || 0);
+    if (n <= 0) {
+      return NextResponse.json(
+        { error: "El mínimo de paquetes tiene que ser un número mayor a cero." },
+        { status: 400 }
+      );
+    }
+    await guardarTexto("min_paquetes", String(n));
+  }
+
   if (Array.isArray(body.chips)) {
     const chips = body.chips
       .map((c: unknown) => String(c ?? "").trim())

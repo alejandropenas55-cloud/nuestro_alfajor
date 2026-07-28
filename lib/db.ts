@@ -138,6 +138,9 @@ CREATE TABLE IF NOT EXISTS catalogo_condiciones (
 const COLUMNAS_NUEVAS = [
   "ALTER TABLE usuarios ADD COLUMN intentos_fallidos INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE usuarios ADD COLUMN bloqueado_hasta TEXT",
+  // Mínimo de compra propio del producto (la Bandeja x14 pide 10 bandejas).
+  // NULL = entra en el mínimo general surtido.
+  "ALTER TABLE catalogo_productos ADD COLUMN minimo_propio INTEGER",
 ];
 
 let schemaReady: Promise<unknown> | null = null;

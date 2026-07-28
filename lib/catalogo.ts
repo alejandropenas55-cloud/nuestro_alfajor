@@ -26,6 +26,9 @@ export type CatalogoProducto = {
   tag_color: string;
   activo: number;
   orden: number;
+  // Mínimo de compra propio (la Bandeja x14 pide 10). NULL = el producto
+  // entra en el mínimo general surtido.
+  minimo_propio: number | null;
   // URL lista para <img>; null = mostrar placeholder. Incluye la fecha de
   // actualización como cache-buster para que un cambio de foto se vea al toque.
   foto_url: string | null;
@@ -34,7 +37,7 @@ export type CatalogoProducto = {
 // Columnas sin el BLOB de la foto: las listas nunca deben arrastrar las
 // imágenes en cada consulta.
 const COLUMNAS = `id, nombre, peso, descripcion, precio, badge, tag_color,
-  activo, orden,
+  activo, orden, minimo_propio,
   CASE WHEN foto IS NULL THEN NULL
        ELSE '/api/catalogo/' || id || '/foto?v=' || replace(replace(actualizado_en, ' ', '_'), ':', '-')
   END AS foto_url`;
@@ -83,6 +86,10 @@ export type CatalogoTextos = {
   quienes_somos: string;
   chips: string[];
   condiciones: CatalogoCondicion[];
+  // Mínimo general de paquetes surtidos. Es dato y no una constante del
+  // código para que cambiarlo no dependa de un despliegue — si no, el texto
+  // de las condiciones diría una cosa y el validador del pedido otra.
+  min_paquetes: number;
 };
 
 export async function leerTextos(): Promise<CatalogoTextos> {
@@ -107,6 +114,7 @@ export async function leerTextos(): Promise<CatalogoTextos> {
       .map((c) => c.trim())
       .filter(Boolean),
     condiciones,
+    min_paquetes: Number(mapa.get("min_paquetes")) || MIN_PAQUETES,
   };
 }
 
@@ -117,6 +125,11 @@ export async function leerTextos(): Promise<CatalogoTextos> {
 // ---------------------------------------------------------------------------
 
 const DESC_PEPAS = "Producción por pedido — puede requerir más plazo de entrega.";
+
+// Valores confirmados por el cliente. Solo se usan para sembrar: a partir de
+// ahí mandan los que estén cargados en la base.
+const MIN_PAQUETES = 15;
+const MIN_BANDEJA_X14 = 10;
 
 const SEED: Array<
   [orden: number, nombre: string, peso: string, precio: number, badge: string, color: string, desc: string]
@@ -179,7 +192,14 @@ let seedListo = false;
 // Marca de "la siembra ya corrió". Sin esto, las inserciones idempotentes
 // resucitarían cualquier producto o condición que el dueño haya borrado a
 // propósito desde el editor.
-const CLAVE_SEED = "seed_hecho";
+//
+// Guarda un NÚMERO de versión, no solo una marca: cuando se agrega algo nuevo
+// al contenido inicial (por ejemplo los mínimos de compra), se sube la versión
+// y las bases ya sembradas se ponen al día solas. Todas las sentencias del
+// lote son idempotentes, así que volver a correrlo no duplica ni pisa nada
+// que el dueño haya editado.
+const CLAVE_SEED = "seed_version";
+const VERSION_SEED = 2;
 
 /**
  * Siembra el contenido inicial UNA sola vez.
@@ -198,45 +218,68 @@ async function seedSiVacio() {
   if (seedListo) return;
   await db.ensureSchema();
 
-  const yaEsta = (await db
-    .prepare("SELECT 1 AS x FROM catalogo_textos WHERE clave = ?")
-    .get(CLAVE_SEED)) as { x: number } | undefined;
-  if (yaEsta) {
+  const fila = (await db
+    .prepare("SELECT valor FROM catalogo_textos WHERE clave = ?")
+    .get(CLAVE_SEED)) as { valor: string } | undefined;
+  if (Number(fila?.valor) >= VERSION_SEED) {
     seedListo = true;
     return;
   }
 
-  await db.client.batch(
-    [
-      ...SEED.map(([orden, nombre, peso, precio, badge, color, desc]) => ({
-        sql: `INSERT INTO catalogo_productos (orden, nombre, peso, precio, badge, tag_color, descripcion)
-              SELECT ?, ?, ?, ?, ?, ?, ?
-              WHERE NOT EXISTS (SELECT 1 FROM catalogo_productos WHERE nombre = ?)`,
-        args: [orden, nombre, peso, precio, badge, color, desc, nombre],
-      })),
-      {
-        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
-        args: ["quienes_somos", QUIENES_SOMOS],
-      },
-      {
-        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
-        args: ["chips", CHIPS],
-      },
-      ...CONDICIONES.map(([titulo, texto], i) => ({
-        sql: `INSERT INTO catalogo_condiciones (titulo, texto, orden)
-              SELECT ?, ?, ?
-              WHERE NOT EXISTS (SELECT 1 FROM catalogo_condiciones WHERE titulo = ?)`,
-        args: [titulo, texto, i + 1, titulo],
-      })),
-      {
-        sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
-        args: [CLAVE_SEED, new Date().toISOString()],
-      },
-    ],
-    "write"
-  );
+  // El CONTENIDO inicial (productos, textos, condiciones) se carga solo en una
+  // base virgen. Si ya hay productos, no se toca: volver a insertarlos
+  // resucitaría lo que el dueño haya borrado a propósito desde el editor.
+  const virgen = await estaVacia("catalogo_productos");
 
+  const contenido = virgen
+    ? [
+        ...SEED.map(([orden, nombre, peso, precio, badge, color, desc]) => ({
+          sql: `INSERT INTO catalogo_productos (orden, nombre, peso, precio, badge, tag_color, descripcion)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          args: [orden, nombre, peso, precio, badge, color, desc],
+        })),
+        {
+          sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+          args: ["quienes_somos", QUIENES_SOMOS],
+        },
+        {
+          sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+          args: ["chips", CHIPS],
+        },
+        ...CONDICIONES.map(([titulo, texto], i) => ({
+          sql: "INSERT INTO catalogo_condiciones (titulo, texto, orden) VALUES (?, ?, ?)",
+          args: [titulo, texto, i + 1],
+        })),
+      ]
+    : [];
+
+  // Los AJUSTES sí corren siempre que falte la versión, también en bases ya
+  // cargadas: son valores que deben existir sí o sí, y ninguno pisa algo que
+  // el dueño ya haya definido.
+  const ajustes = [
+    {
+      sql: "INSERT OR IGNORE INTO catalogo_textos (clave, valor) VALUES (?, ?)",
+      args: ["min_paquetes", String(MIN_PAQUETES)],
+    },
+    {
+      sql: "UPDATE catalogo_productos SET minimo_propio = ? WHERE nombre = ? AND minimo_propio IS NULL",
+      args: [MIN_BANDEJA_X14, "Alfajor de Maicena x14"],
+    },
+    {
+      sql: `INSERT INTO catalogo_textos (clave, valor, actualizado_en)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado_en = datetime('now')`,
+      args: [CLAVE_SEED, String(VERSION_SEED)],
+    },
+  ];
+
+  await db.client.batch([...contenido, ...ajustes], "write");
   seedListo = true;
+}
+
+async function estaVacia(tabla: string): Promise<boolean> {
+  const f = (await db.prepare(`SELECT COUNT(*) AS n FROM ${tabla}`).get()) as { n: number };
+  return Number(f.n) === 0;
 }
 
 // precio: número >= 0, o null = "precio a confirmar". undefined = inválido.
