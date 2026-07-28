@@ -26,6 +26,7 @@ type Borrador = {
   precio: string; // "" = a confirmar
   badge: string;
   tag_color: string;
+  minimo_propio: string; // "" = entra en el mínimo general surtido
 };
 
 export default function PanelCatalogo({
@@ -130,6 +131,7 @@ export default function PanelCatalogo({
             precio: "",
             badge: "",
             tag_color: COLORES[0][0],
+            minimo_propio: "",
           }}
           ocupado={ocupado}
           onCancelar={() => setCreando(false)}
@@ -238,6 +240,7 @@ export default function PanelCatalogo({
                   precio: p.precio === null ? "" : String(p.precio),
                   badge: p.badge,
                   tag_color: p.tag_color,
+                  minimo_propio: p.minimo_propio ? String(p.minimo_propio) : "",
                 }}
                 ocupado={ocupado}
                 onCancelar={() => setEditando(null)}
@@ -367,6 +370,21 @@ function Formulario({
             placeholder="2500"
           />
         )}
+      </Campo>
+
+      <Campo label="Mínimo de compra propio (opcional)">
+        <input
+          className="input-grande !text-base !py-3"
+          type="text"
+          inputMode="numeric"
+          value={b.minimo_propio}
+          onChange={(e) => set("minimo_propio", e.target.value.replace(/\D/g, ""))}
+          placeholder="Vacío = entra en el mínimo general"
+        />
+        <p className="text-xs text-dulce-400 mt-1.5">
+          Solo para productos que se piden aparte, como la bandeja x14 (10).
+          Si lo dejás vacío, el producto suma al mínimo general surtido.
+        </p>
       </Campo>
 
       <Campo label="Etiqueta destacada (opcional)">

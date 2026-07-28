@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
     ? Math.round(Number(body.orden))
     : Number(maxFila.m) + 1;
 
+  const minimoPropio = Math.round(Number(body.minimo_propio) || 0);
+
   const info = await db
     .prepare(
-      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, badge, tag_color, activo, orden)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, badge, tag_color, activo, orden, minimo_propio)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
@@ -55,7 +57,8 @@ export async function POST(req: NextRequest) {
       String(body.badge ?? "").trim(),
       normalizarColor(body.tag_color),
       body.activo === false || body.activo === 0 ? 0 : 1,
-      orden
+      orden,
+      minimoPropio > 0 ? minimoPropio : null
     );
 
   return NextResponse.json({ ok: true, id: info.lastInsertRowid });

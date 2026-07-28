@@ -20,11 +20,16 @@ import { NextRequest, NextResponse } from "next/server";
 /** Lo único que el host del catálogo tiene permitido servir. */
 const PERMITIDO = [
   /^\/catalogo$/,
+  // Material comercial para revendedores. Es público: muestra precios
+  // MAYORISTAS, así que cualquiera con el link los ve. Si en algún momento
+  // hay que reservarlo solo para distribuidores, se saca de esta lista y se
+  // le pone una puerta.
+  /^\/mayoristas$/,
   // Las fotos de los productos. Es de solo lectura y ya era pública.
   /^\/api\/catalogo\/\d+\/foto$/,
   // Archivos que el navegador necesita para dibujar la página.
   /^\/_next\//,
-  /^\/(favicon-32|icon-180|icon-192|icon-512)\.png$/,
+  /^\/(favicon-32|icon-180|icon-192|icon-512|logo-nuestro-alfajor)\.png$/,
   /^\/(manifest\.json|robots\.txt)$/,
 ];
 

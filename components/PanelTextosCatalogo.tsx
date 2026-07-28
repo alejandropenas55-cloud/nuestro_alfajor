@@ -21,6 +21,7 @@ export default function PanelTextosCatalogo({
   const [condiciones, setCondiciones] = useState(
     textosIniciales.condiciones.map((c) => ({ titulo: c.titulo, texto: c.texto }))
   );
+  const [minPaquetes, setMinPaquetes] = useState(String(textosIniciales.min_paquetes));
   const [ocupado, setOcupado] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -33,7 +34,12 @@ export default function PanelTextosCatalogo({
       const r = await fetch("/api/catalogo/textos", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quienes_somos: quienes, chips, condiciones }),
+        body: JSON.stringify({
+          quienes_somos: quienes,
+          chips,
+          condiciones,
+          min_paquetes: Number(minPaquetes) || 0,
+        }),
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
@@ -114,6 +120,25 @@ export default function PanelTextosCatalogo({
                 + Agregar sello
               </button>
             )}
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-dulce-600 mb-1.5">
+              Mínimo de compra (paquetes surtidos)
+            </p>
+            <input
+              className="input-grande !text-base !py-3"
+              type="text"
+              inputMode="numeric"
+              value={minPaquetes}
+              disabled={!puedeEditar}
+              onChange={(e) => setMinPaquetes(e.target.value.replace(/\D/g, ""))}
+            />
+            <p className="text-xs text-dulce-400 mt-1.5">
+              Es el número que controla la página de mayoristas. Si un producto
+              tiene su propio mínimo (como la bandeja x14), se carga en el
+              producto, más abajo.
+            </p>
           </div>
 
           <div>
