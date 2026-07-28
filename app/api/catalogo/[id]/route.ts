@@ -44,14 +44,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
-  // El precio va aparte porque null es un valor válido ("a confirmar") y no
-  // un "no vino en el body".
-  if ("precio" in body) {
-    const precio = normalizarPrecio(body.precio);
+  // Los precios van aparte porque null es un valor válido ("a confirmar") y
+  // no un "no vino en el body".
+  for (const campo of ["precio", "precio_minorista", "precio_distribuidor"]) {
+    if (!(campo in body)) continue;
+    const precio = normalizarPrecio(body[campo]);
     if (precio === undefined) {
-      return NextResponse.json({ error: "El precio no es válido." }, { status: 400 });
+      return NextResponse.json({ error: "Alguno de los precios no es válido." }, { status: 400 });
     }
-    sets.push("precio = ?");
+    sets.push(`${campo} = ?`);
     valores.push(precio);
   }
 

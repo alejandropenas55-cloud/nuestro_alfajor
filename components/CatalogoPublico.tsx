@@ -31,20 +31,22 @@ export default function CatalogoPublico({
   const [estilo, setEstilo] = useState<Estilo>("foto");
   const [expandido, setExpandido] = useState(false);
 
+  // Este catálogo es el del consumidor final: usa el precio MINORISTA, que se
+  // carga aparte del mayorista y del de distribuidor.
   const elegidos = useMemo(
     () =>
       productos
-        .map((p) => ({ p, cant: aEntero(cantidades[p.id]) }))
+        .map((p) => ({ p, cant: aEntero(cantidades[p.id]), precio: p.precio_minorista }))
         .filter((x) => x.cant > 0),
     [productos, cantidades]
   );
 
   const totalConocido = elegidos.reduce(
-    (a, { p, cant }) => a + (p.precio ?? 0) * cant,
+    (a, { precio, cant }) => a + (precio ?? 0) * cant,
     0
   );
   const unidadesAConfirmar = elegidos.reduce(
-    (a, { p, cant }) => a + (p.precio === null ? cant : 0),
+    (a, { precio, cant }) => a + (precio === null ? cant : 0),
     0
   );
   const totalUnidades = elegidos.reduce((a, x) => a + x.cant, 0);
@@ -335,11 +337,11 @@ function TarjetaProducto({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="font-display text-lg text-cat-caramelo">
-            {p.precio === null ? (
+            {p.precio_minorista === null ? (
               <span className="text-base text-cat-suave">Precio a confirmar</span>
             ) : (
               <>
-                {precioAR(p.precio)} <span className="text-sm text-cat-suave">c/u</span>
+                {precioAR(p.precio_minorista)} <span className="text-sm text-cat-suave">c/u</span>
               </>
             )}
           </p>
@@ -347,9 +349,9 @@ function TarjetaProducto({
           <Stepper valor={valor} onCambiar={onCambiar} onSumar={onSumar} onSalir={onSalir} etiqueta={p.nombre} />
         </div>
 
-        {elegido && p.precio !== null && (
+        {elegido && p.precio_minorista !== null && (
           <p className="mt-3 text-right text-sm font-semibold text-cat-tinta">
-            Subtotal: {precioAR(p.precio * cant)}
+            Subtotal: {precioAR(p.precio_minorista * cant)}
           </p>
         )}
       </div>
@@ -488,7 +490,7 @@ function BarraResumen({
                   <div className="min-w-0">
                     <p className="text-sm text-cat-tinta truncate">{p.nombre}</p>
                     <p className="text-xs text-cat-suave">
-                      {p.precio === null ? "A confirmar" : precioAR(p.precio * cant)}
+                      {p.precio_minorista === null ? "A confirmar" : precioAR(p.precio_minorista * cant)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -597,9 +599,9 @@ function construirMensaje(
   unidadesAConfirmar: number
 ): string {
   const lineas = elegidos.map(({ p, cant }) =>
-    p.precio === null
+    p.precio_minorista === null
       ? `${cant}x ${p.nombre} — precio a confirmar`
-      : `${cant}x ${p.nombre} — ${precioAR(p.precio * cant)}`
+      : `${cant}x ${p.nombre} — ${precioAR(p.precio_minorista * cant)}`
   );
 
   let total = `Total (precio de lista): ${precioAR(totalConocido)}`;

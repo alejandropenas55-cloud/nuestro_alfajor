@@ -2,18 +2,45 @@
 
 import { useMemo, useState } from "react";
 import type { CatalogoProducto, CatalogoTextos } from "@/lib/catalogo";
-import { hexRgba, precioAR } from "@/lib/formato";
+import type { Lista } from "@/lib/formato";
+import { hexRgba, precioAR, precioDeLista } from "@/lib/formato";
 
 // --------------------------------------------------------------------------
-// Material comercial para distribuidores y mayoristas.
+// Material comercial por canal. La misma página sirve a /mayorista y a
+// /distribuidor: cambia la lista de precios y si hay mínimos de compra.
 //
 // Mismo estilo que el packaging: cuadrillé vichy por sabor, cinta negra y
 // condensada pesada. Lee la misma tabla que el catálogo público, así que no
-// hay dos verdades: un cambio de precio se ve en los dos lados a la vez.
+// hay dos verdades: un cambio de precio se ve en todos lados a la vez.
 //
 // El visitante no escribe nada en la base: arma el pedido acá y lo cierra por
 // WhatsApp, igual que en /catalogo.
 // --------------------------------------------------------------------------
+
+const CANAL: Record<
+  Exclude<Lista, "minorista">,
+  { titulo: string; bajada: string; nota: string; saludo: string; conMinimos: boolean }
+> = {
+  mayorista: {
+    titulo: "Venta mayorista y reventa",
+    bajada:
+      "Todo lo que necesitás para revender Nuestro Alfajor: la línea completa " +
+      "con precios mayoristas, los mínimos, las condiciones y el link del " +
+      "catálogo que le vas a pasar a tus propios clientes.",
+    nota: "Precio mayorista por paquete",
+    saludo: "Hola! Somos revendedores y queremos hacer un pedido mayorista a Nuestro Alfajor:",
+    conMinimos: true,
+  },
+  distribuidor: {
+    titulo: "Lista para distribuidores",
+    bajada:
+      "Precios de distribuidor sobre la línea completa. Sin mínimo de compra: " +
+      "armás el pedido con las cantidades que necesites y lo cerramos por WhatsApp.",
+    nota: "Precio de distribuidor por paquete",
+    saludo: "Hola! Somos distribuidores y queremos hacer un pedido a Nuestro Alfajor:",
+    conMinimos: false,
+  },
+};
 
 type Solapa = "quienes" | "condiciones" | "pedidos" | "ganas";
 
@@ -28,17 +55,20 @@ const SOLAPAS: Array<[Solapa, string]> = [
   ["ganas", "Cuánto ganás"],
 ];
 
-export default function Mayoristas({
+export default function ListaPrecios({
+  lista,
   productos,
   textos,
   whatsapp,
   instagram,
 }: {
+  lista: Exclude<Lista, "minorista">;
   productos: CatalogoProducto[];
   textos: CatalogoTextos;
   whatsapp: string;
   instagram: string;
 }) {
+  const canal = CANAL[lista];
   const [solapa, setSolapa] = useState<Solapa>("quienes");
   // Cantidad como TEXTO: los pedidos mayoristas son por volumen y hay que
   // poder tipear "30" sin que el campo se reescriba en cada tecla.
@@ -49,31 +79,34 @@ export default function Mayoristas({
   // escribir el número directo sin pelear con el campo.
   const [pesosExtra, setPesosExtra] = useState("1000");
 
+  // El precio depende del canal; el resto de la ficha es el mismo.
   const elegidos = useMemo(
     () =>
       productos
-        .map((p) => ({ p, q: aEntero(cant[p.id]) }))
+        .map((p) => ({ p, q: aEntero(cant[p.id]), precio: precioDeLista(p, lista) }))
         .filter((x) => x.q > 0),
-    [productos, cant]
+    [productos, cant, lista]
   );
 
-  const total = elegidos.reduce((a, { p, q }) => a + (p.precio ?? 0) * q, 0);
+  const total = elegidos.reduce((a, { precio, q }) => a + (precio ?? 0) * q, 0);
   const sueltos = elegidos
     .filter(({ p }) => !p.minimo_propio)
     .reduce((a, { q }) => a + q, 0);
   const totalUnidades = elegidos.reduce((a, { q }) => a + q, 0);
 
-  // Cada producto con mínimo propio se controla por separado.
-  const conMinimoPropio = elegidos.filter(({ p }) => p.minimo_propio);
+  // Cada producto con mínimo propio se controla por separado. Los
+  // distribuidores no tienen mínimos: compran por volumen y el freno sobra.
+  const conMinimoPropio = canal.conMinimos ? elegidos.filter(({ p }) => p.minimo_propio) : [];
   const faltaAlgo =
-    (sueltos > 0 && sueltos < textos.min_paquetes) ||
-    conMinimoPropio.some(({ p, q }) => q < (p.minimo_propio ?? 0));
+    canal.conMinimos &&
+    ((sueltos > 0 && sueltos < textos.min_paquetes) ||
+      conMinimoPropio.some(({ p, q }) => q < (p.minimo_propio ?? 0)));
 
   function sumar(id: number, d: number) {
     setCant((prev) => ({ ...prev, [id]: String(Math.max(0, aEntero(prev[id]) + d)) }));
   }
 
-  const mensaje = construirMensaje(elegidos, total, faltaAlgo);
+  const mensaje = construirMensaje(canal.saludo, elegidos, total, faltaAlgo);
   const linkWsp = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
 
   return (
@@ -81,13 +114,9 @@ export default function Mayoristas({
       <header className="may-masthead">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-nuestro-alfajor.png" alt="Nuestro Alfajor — Artesanal" className="may-logo" />
-        <h1 className="may-titulo">Venta mayorista y reventa</h1>
+        <h1 className="may-titulo">{canal.titulo}</h1>
         <p className="may-kicker">Fábrica artesanal · Paraná, Entre Ríos</p>
-        <p className="may-bajada">
-          Todo lo que necesitás para revender Nuestro Alfajor: la línea completa
-          con precios mayoristas, los mínimos, las condiciones y el link del
-          catálogo que le vas a pasar a tus propios clientes.
-        </p>
+        <p className="may-bajada">{canal.bajada}</p>
         <div className="may-franja" style={vichy("#B14539", 0.55)} aria-hidden="true" />
       </header>
 
@@ -172,10 +201,11 @@ export default function Mayoristas({
 
         {solapa === "pedidos" && (
           <section>
-            <Rotulo titulo="Línea y precios" nota="Precio mayorista por paquete" />
+            <Rotulo titulo="Línea y precios" nota={canal.nota} />
             <p className="may-plomo">
               Poné las cantidades y el pedido se arma solo. Podés escribir el
-              número directo — abajo te vamos avisando si llegás a los mínimos.
+              número directo
+              {canal.conMinimos ? " — abajo te vamos avisando si llegás a los mínimos." : "."}
             </p>
 
             <div className="may-lista">
@@ -183,6 +213,8 @@ export default function Mayoristas({
                 <Tarjeta
                   key={p.id}
                   producto={p}
+                  precio={precioDeLista(p, lista)}
+                  mostrarMinimo={canal.conMinimos}
                   valor={cant[p.id] ?? ""}
                   onCambiar={(v) => setCant((prev) => ({ ...prev, [p.id]: v }))}
                   onSumar={(d) => sumar(p.id, d)}
@@ -197,7 +229,19 @@ export default function Mayoristas({
             </div>
 
             <div className="may-chequeo">
-              {elegidos.length === 0 ? (
+              {!canal.conMinimos ? (
+                elegidos.length === 0 ? (
+                  <p className="may-plomo" style={{ margin: 0, fontSize: ".9rem" }}>
+                    Sin mínimo de compra: armá el pedido con las cantidades que
+                    necesites.
+                  </p>
+                ) : (
+                  <div className="may-total">
+                    <span>Total del pedido</span>
+                    <b>{precioAR(total)}</b>
+                  </div>
+                )
+              ) : elegidos.length === 0 ? (
                 <p className="may-plomo" style={{ margin: 0, fontSize: ".9rem" }}>
                   Mínimo de compra: {textos.min_paquetes} paquetes surtidos.
                   {productos
@@ -379,12 +423,16 @@ function Chequeo({ ok, texto, nota }: { ok: boolean; texto: string; nota: string
 
 function Tarjeta({
   producto: p,
+  precio,
+  mostrarMinimo,
   valor,
   onCambiar,
   onSumar,
   onSalir,
 }: {
   producto: CatalogoProducto;
+  precio: number | null;
+  mostrarMinimo: boolean;
   valor: string;
   onCambiar: (v: string) => void;
   onSumar: (d: number) => void;
@@ -408,15 +456,15 @@ function Tarjeta({
         {p.peso && <p className="may-meta">{p.peso}</p>}
         <div className="may-fila-precio">
           <span className="may-precio">
-            {p.precio === null ? (
+            {precio === null ? (
               <span style={{ fontSize: "1rem" }}>Precio a confirmar</span>
             ) : (
               <>
-                {precioAR(p.precio)} <small>c/u</small>
+                {precioAR(precio)} <small>c/u</small>
               </>
             )}
           </span>
-          {p.minimo_propio ? (
+          {mostrarMinimo && p.minimo_propio ? (
             <span className="may-aviso" style={{ color: p.tag_color }}>
               Mínimo {p.minimo_propio}
             </span>
@@ -455,7 +503,7 @@ function Simulador({
   markup,
   pesosExtra,
 }: {
-  elegidos: Array<{ p: CatalogoProducto; q: number }>;
+  elegidos: Array<{ p: CatalogoProducto; q: number; precio: number | null }>;
   modo: ModoMargen;
   markup: number;
   pesosExtra: number;
@@ -463,15 +511,19 @@ function Simulador({
   // Por porcentaje, el precio de reventa es el costo más un %. Por pesos, se
   // le suma el mismo importe a CADA paquete — que es como lo piensa el que
   // revende: "le pongo mil pesos a cada uno".
-  const ventaUnitaria = (p: CatalogoProducto) =>
-    modo === "porcentaje"
-      ? (p.precio ?? 0) * (1 + markup / 100)
-      : (p.precio ?? 0) + pesosExtra;
+  const ventaUnitaria = (costoUnitario: number) =>
+    modo === "porcentaje" ? costoUnitario * (1 + markup / 100) : costoUnitario + pesosExtra;
 
-  const filas = elegidos.map(({ p, q }) => {
-    const costo = (p.precio ?? 0) * q;
-    const venta = ventaUnitaria(p) * q;
-    return { p, q, costo, venta, unitaria: ventaUnitaria(p) };
+  const filas = elegidos.map(({ p, q, precio }) => {
+    const unitario = precio ?? 0;
+    return {
+      p,
+      q,
+      unitario,
+      costo: unitario * q,
+      venta: ventaUnitaria(unitario) * q,
+      unitaria: ventaUnitaria(unitario),
+    };
   });
 
   const costo = filas.reduce((a, f) => a + f.costo, 0);
@@ -510,7 +562,7 @@ function Simulador({
               <tr key={f.p.id}>
                 <td>{f.p.nombre}</td>
                 <td>{f.q}</td>
-                <td>{precioAR(f.p.precio ?? 0)}</td>
+                <td>{precioAR(f.unitario)}</td>
                 <td>{precioAR(f.unitaria)}</td>
                 <td>{precioAR(f.venta - f.costo)}</td>
               </tr>
@@ -548,20 +600,17 @@ function vichy(hex: string, alpha: number): React.CSSProperties {
 }
 
 function construirMensaje(
-  elegidos: Array<{ p: CatalogoProducto; q: number }>,
+  saludo: string,
+  elegidos: Array<{ p: CatalogoProducto; q: number; precio: number | null }>,
   total: number,
   faltaAlgo: boolean
 ): string {
-  const lineas = elegidos.map(({ p, q }) =>
-    p.precio === null
+  const lineas = elegidos.map(({ p, q, precio }) =>
+    precio === null
       ? `${q}x ${p.nombre} — precio a confirmar`
-      : `${q}x ${p.nombre} — ${precioAR(p.precio * q)}`
+      : `${q}x ${p.nombre} — ${precioAR(precio * q)}`
   );
-  const l = [
-    "Hola! Somos revendedores y queremos hacer un pedido mayorista a Nuestro Alfajor:",
-    ...lineas,
-    `Total (precio mayorista): ${precioAR(total)}`,
-  ];
+  const l = [saludo, ...lineas, `Total: ${precioAR(total)}`];
   if (faltaAlgo) l.push("(Sabemos que todavía no llegamos al mínimo, queríamos consultarlo.)");
   l.push("¿Coordinamos la fecha de entrega? Gracias!");
   return l.join("\n");

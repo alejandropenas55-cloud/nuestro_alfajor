@@ -131,6 +131,10 @@ const COLUMNAS_NUEVAS = [
   // Mínimo de compra propio del producto (la Bandeja x14 pide 10 bandejas).
   // NULL = entra en el mínimo general surtido.
   "ALTER TABLE catalogo_productos ADD COLUMN minimo_propio INTEGER",
+  // Tres listas de precios, una por canal. La columna "precio" que ya existía
+  // es la MAYORISTA (era la única cuando se creó la tabla).
+  "ALTER TABLE catalogo_productos ADD COLUMN precio_minorista REAL",
+  "ALTER TABLE catalogo_productos ADD COLUMN precio_distribuidor REAL",
 ];
 
 let schemaReady: Promise<unknown> | null = null;

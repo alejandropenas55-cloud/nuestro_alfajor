@@ -20,11 +20,11 @@ import { NextRequest, NextResponse } from "next/server";
 /** Lo único que el host del catálogo tiene permitido servir. */
 const PERMITIDO = [
   /^\/catalogo$/,
-  // Material comercial para revendedores. Es público: muestra precios
-  // MAYORISTAS, así que cualquiera con el link los ve. Si en algún momento
-  // hay que reservarlo solo para distribuidores, se saca de esta lista y se
-  // le pone una puerta.
-  /^\/mayoristas$/,
+  // Las otras dos listas de precios. Son PÚBLICAS: cualquiera con el link ve
+  // los precios de ese canal. Si en algún momento hay que reservarlas, se
+  // sacan de esta lista y se les pone una puerta.
+  /^\/mayoristas?$/,
+  /^\/distribuidor$/,
   // Las fotos de los productos. Es de solo lectura y ya era pública.
   /^\/api\/catalogo\/\d+\/foto$/,
   // Archivos que el navegador necesita para dibujar la página.
