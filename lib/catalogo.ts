@@ -86,6 +86,9 @@ export type CatalogoCondicion = {
   titulo: string;
   texto: string;
   orden: number;
+  /** En qué páginas de precios se muestra. Por defecto, en las dos. */
+  visible_mayorista: number;
+  visible_distribuidor: number;
 };
 
 export type CatalogoTextos = {
@@ -112,7 +115,10 @@ export async function leerTextos(): Promise<CatalogoTextos> {
 
   const condiciones = aPlano<CatalogoCondicion>(
     await db
-      .prepare("SELECT id, titulo, texto, orden FROM catalogo_condiciones ORDER BY orden, id")
+      .prepare(
+        `SELECT id, titulo, texto, orden, visible_mayorista, visible_distribuidor
+         FROM catalogo_condiciones ORDER BY orden, id`
+      )
       .all()
   );
 

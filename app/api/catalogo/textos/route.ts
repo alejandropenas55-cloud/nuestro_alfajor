@@ -55,6 +55,8 @@ export async function PUT(req: NextRequest) {
       .map((c: any) => ({
         titulo: String(c?.titulo ?? "").trim(),
         texto: String(c?.texto ?? "").trim(),
+        visible_mayorista: c?.visible_mayorista === false ? 0 : 1,
+        visible_distribuidor: c?.visible_distribuidor === false ? 0 : 1,
       }))
       .filter((c: any) => c.titulo || c.texto);
 
@@ -62,8 +64,12 @@ export async function PUT(req: NextRequest) {
     let orden = 1;
     for (const c of limpias) {
       await db
-        .prepare("INSERT INTO catalogo_condiciones (titulo, texto, orden) VALUES (?, ?, ?)")
-        .run(c.titulo, c.texto, orden++);
+        .prepare(
+          `INSERT INTO catalogo_condiciones
+             (titulo, texto, orden, visible_mayorista, visible_distribuidor)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .run(c.titulo, c.texto, orden++, c.visible_mayorista, c.visible_distribuidor);
     }
   }
 

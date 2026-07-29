@@ -69,6 +69,12 @@ export default function ListaPrecios({
   instagram: string;
 }) {
   const canal = CANAL[lista];
+  // El simulador de reventa ("Cuánto ganás") es una herramienta para quien
+  // revende con margen propio: aplica a mayorista, no a distribuidor.
+  const solapas = lista === "distribuidor" ? SOLAPAS.filter(([id]) => id !== "ganas") : SOLAPAS;
+  const condicionesCanal = textos.condiciones.filter((c) =>
+    lista === "mayorista" ? c.visible_mayorista !== 0 : c.visible_distribuidor !== 0
+  );
   const [solapa, setSolapa] = useState<Solapa>("quienes");
   // Cantidad como TEXTO: los pedidos mayoristas son por volumen y hay que
   // poder tipear "30" sin que el campo se reescriba en cada tecla.
@@ -122,7 +128,7 @@ export default function ListaPrecios({
 
       <nav className="may-solapas" aria-label="Secciones">
         <div className="may-solapas-inner" role="tablist">
-          {SOLAPAS.map(([id, label]) => (
+          {solapas.map(([id, label]) => (
             <button
               key={id}
               role="tab"
@@ -166,7 +172,7 @@ export default function ListaPrecios({
           <section>
             <Rotulo titulo="Condiciones comerciales" nota="Vigentes" />
             <dl className="may-cond">
-              {textos.condiciones.map((c) => (
+              {condicionesCanal.map((c) => (
                 <div key={c.id}>
                   <dt>{c.titulo}</dt>
                   <dd>{c.texto}</dd>

@@ -19,7 +19,12 @@ export default function PanelTextosCatalogo({
   const [quienes, setQuienes] = useState(textosIniciales.quienes_somos);
   const [chips, setChips] = useState(textosIniciales.chips);
   const [condiciones, setCondiciones] = useState(
-    textosIniciales.condiciones.map((c) => ({ titulo: c.titulo, texto: c.texto }))
+    textosIniciales.condiciones.map((c) => ({
+      titulo: c.titulo,
+      texto: c.texto,
+      visible_mayorista: c.visible_mayorista !== 0,
+      visible_distribuidor: c.visible_distribuidor !== 0,
+    }))
   );
   const [minPaquetes, setMinPaquetes] = useState(String(textosIniciales.min_paquetes));
   const [ocupado, setOcupado] = useState(false);
@@ -197,6 +202,38 @@ export default function PanelTextosCatalogo({
                       )
                     }
                   />
+                  <div className="mt-2 flex flex-wrap gap-4">
+                    <label className="flex items-center gap-1.5 text-sm text-dulce-600">
+                      <input
+                        type="checkbox"
+                        checked={c.visible_mayorista}
+                        disabled={!puedeEditar}
+                        onChange={(e) =>
+                          setCondiciones(
+                            condiciones.map((x, j) =>
+                              j === i ? { ...x, visible_mayorista: e.target.checked } : x
+                            )
+                          )
+                        }
+                      />
+                      Se ve en Mayorista
+                    </label>
+                    <label className="flex items-center gap-1.5 text-sm text-dulce-600">
+                      <input
+                        type="checkbox"
+                        checked={c.visible_distribuidor}
+                        disabled={!puedeEditar}
+                        onChange={(e) =>
+                          setCondiciones(
+                            condiciones.map((x, j) =>
+                              j === i ? { ...x, visible_distribuidor: e.target.checked } : x
+                            )
+                          )
+                        }
+                      />
+                      Se ve en Distribuidor
+                    </label>
+                  </div>
                   {puedeEditar && (
                     <button
                       onClick={() => setCondiciones(condiciones.filter((_, j) => j !== i))}
@@ -210,7 +247,12 @@ export default function PanelTextosCatalogo({
             </div>
             {puedeEditar && (
               <button
-                onClick={() => setCondiciones([...condiciones, { titulo: "", texto: "" }])}
+                onClick={() =>
+                  setCondiciones([
+                    ...condiciones,
+                    { titulo: "", texto: "", visible_mayorista: true, visible_distribuidor: true },
+                  ])
+                }
                 className="mt-2 text-sm text-dulce-600 underline underline-offset-2"
               >
                 + Agregar condición
