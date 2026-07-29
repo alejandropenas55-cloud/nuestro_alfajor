@@ -112,12 +112,15 @@ CREATE TABLE IF NOT EXISTS catalogo_textos (
 );
 
 -- Condiciones de compra: una fila por condición para poder reordenarlas y
--- agregar o sacar sin tocar código.
+-- agregar o sacar sin tocar código. visible_mayorista/visible_distribuidor
+-- controlan en qué página de precios aparece cada una (default: en las dos).
 CREATE TABLE IF NOT EXISTS catalogo_condiciones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   titulo TEXT NOT NULL,
   texto TEXT NOT NULL,
-  orden INTEGER NOT NULL DEFAULT 0
+  orden INTEGER NOT NULL DEFAULT 0,
+  visible_mayorista INTEGER NOT NULL DEFAULT 1,
+  visible_distribuidor INTEGER NOT NULL DEFAULT 1
 );
 `;
 
@@ -135,6 +138,9 @@ const COLUMNAS_NUEVAS = [
   // es la MAYORISTA (era la única cuando se creó la tabla).
   "ALTER TABLE catalogo_productos ADD COLUMN precio_minorista REAL",
   "ALTER TABLE catalogo_productos ADD COLUMN precio_distribuidor REAL",
+  // Qué condición se ve en cada página de precios (default: en las dos).
+  "ALTER TABLE catalogo_condiciones ADD COLUMN visible_mayorista INTEGER NOT NULL DEFAULT 1",
+  "ALTER TABLE catalogo_condiciones ADD COLUMN visible_distribuidor INTEGER NOT NULL DEFAULT 1",
 ];
 
 let schemaReady: Promise<unknown> | null = null;
