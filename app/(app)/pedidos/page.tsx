@@ -1,24 +1,22 @@
-import Link from "next/link";
 import db from "@/lib/db";
-import ListaPedidos from "@/components/ListaPedidos";
+import CalendarioPedidos from "@/components/CalendarioPedidos";
 import type { PedidoConItems } from "@/components/TarjetaPedido";
 
 export const dynamic = "force-dynamic";
 
-const LIMITE = 20;
+async function obtenerPedidosDelMes(anio: number, mes: number): Promise<PedidoConItems[]> {
+  const desde = `${anio}-${String(mes).padStart(2, "0")}-01`;
+  const ultimoDia = new Date(anio, mes, 0).getDate();
+  const hasta = `${anio}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
 
-async function obtenerPrimeraTanda(): Promise<{ pedidos: PedidoConItems[]; hasMore: boolean }> {
   const filas = (await db
     .prepare(
       `SELECT p.id, p.fecha_entrega, p.estado, p.texto_remito, c.nombre AS cliente_nombre
        FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
-       ORDER BY p.fecha_entrega ASC, p.id DESC
-       LIMIT ?`
+       WHERE p.fecha_entrega BETWEEN ? AND ?
+       ORDER BY p.fecha_entrega ASC, p.id DESC`
     )
-    .all(LIMITE + 1)) as any[];
-
-  const hasMore = filas.length > LIMITE;
-  const pagina = hasMore ? filas.slice(0, LIMITE) : filas;
+    .all(desde, hasta)) as any[];
 
   const items = db.prepare(
     `SELECT pi.cantidad, pi.precio_unitario, pr.linea, pr.formato
@@ -26,25 +24,25 @@ async function obtenerPrimeraTanda(): Promise<{ pedidos: PedidoConItems[]; hasMo
      WHERE pi.pedido_id = ?`
   );
 
-  const pedidos = await Promise.all(
-    pagina.map(async (p) => ({ ...p, items: await items.all(p.id) }))
-  );
-
-  return { pedidos: pedidos as PedidoConItems[], hasMore };
+  return (await Promise.all(
+    filas.map(async (p) => ({ ...p, items: await items.all(p.id) }))
+  )) as PedidoConItems[];
 }
 
 export default async function PedidosPage() {
-  const { pedidos, hasMore } = await obtenerPrimeraTanda();
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = hoy.getMonth() + 1;
+  const hoyIso = `${anio}-${String(mes).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+
+  const pedidos = await obtenerPedidosDelMes(anio, mes);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="sticky top-14 z-10 bg-masa-50 -mx-4 px-4 pt-2 pb-3 -mt-2">
-        <Link href="/pedidos/nuevo" className="btn-primario w-full">
-          + Cargar pedido
-        </Link>
-      </div>
-
-      <ListaPedidos pedidosIniciales={pedidos} hasMoreInicial={hasMore} />
-    </div>
+    <CalendarioPedidos
+      pedidosIniciales={pedidos}
+      anioInicial={anio}
+      mesInicial={mes}
+      hoyInicial={hoyIso}
+    />
   );
 }

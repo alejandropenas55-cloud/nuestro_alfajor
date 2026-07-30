@@ -78,6 +78,16 @@ CREATE TABLE IF NOT EXISTS progreso_uso (
   UNIQUE(usuario_id, fecha)
 );
 
+-- Etapa 1 de la Hoja de Ruta: Stock simple, sin historial (se pisa el
+-- valor al editar). "nombre" es la clave natural, mismo string que el
+-- nombre de insumo usado en lib/produccion.ts.
+CREATE TABLE IF NOT EXISTS stock_insumos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL UNIQUE,
+  cantidad REAL NOT NULL DEFAULT 0,
+  actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Catálogo público: entidad COMERCIAL, separada a propósito de "productos"
 -- (que es la entidad operativa de pedidos/producción con precios por fecha
 -- de corte). produccion_ref queda como vínculo opcional a productos(id)
@@ -141,13 +151,6 @@ const COLUMNAS_NUEVAS = [
   // Qué condición se ve en cada página de precios (default: en las dos).
   "ALTER TABLE catalogo_condiciones ADD COLUMN visible_mayorista INTEGER NOT NULL DEFAULT 1",
   "ALTER TABLE catalogo_condiciones ADD COLUMN visible_distribuidor INTEGER NOT NULL DEFAULT 1",
-  // Fecha de carga del cliente. Turso no permite default no-constante en
-  // ALTER TABLE, así que la columna se agrega sin default y el valor lo pone
-  // siempre la app al insertar (ver app/api/clientes/route.ts). Los clientes
-  // que ya existían quedan con la fecha de esta migración (no se puede
-  // reconstruir cuándo se cargó cada uno en el pasado).
-  "ALTER TABLE clientes ADD COLUMN creado_en TEXT",
-  "UPDATE clientes SET creado_en = datetime('now') WHERE creado_en IS NULL",
 ];
 
 let schemaReady: Promise<unknown> | null = null;
@@ -172,12 +175,15 @@ function prepare(sql: string) {
     get: async (...args: any[]) => {
       await ensureSchema();
       const r = await client.execute({ sql, args });
-      return r.rows[0] as any;
+      // Las filas de @libsql/client no son objetos planos (tienen metodos
+      // propios), y Next.js no deja pasar eso de un Server Component a un
+      // Client Component. Se convierten a objetos planos con el spread.
+      return r.rows[0] ? ({ ...r.rows[0] } as any) : undefined;
     },
     all: async (...args: any[]) => {
       await ensureSchema();
       const r = await client.execute({ sql, args });
-      return r.rows as any[];
+      return r.rows.map((row) => ({ ...row })) as any[];
     },
     run: async (...args: any[]) => {
       await ensureSchema();

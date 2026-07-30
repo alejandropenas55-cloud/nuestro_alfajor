@@ -9,22 +9,22 @@ const ITEMS_BASE = [
   { href: "/config", label: "Config", icon: "⚙️" },
 ];
 
-// El catálogo público muestra precios de venta, así que lo edita el mismo
-// grupo que puede tocar precios (Alejandro/Javier/Mercedes). Francisco no
-// lo ve, igual que no edita precios.
+const ITEM_COMPRAS = { href: "/orden-de-compra", label: "Compras", icon: "🧾" };
+// El catálogo público muestra precios de venta: mismo criterio de acceso
+// que Compras (Alejandro/Javier/Mercedes).
 const ITEM_CATALOGO = { href: "/editar-catalogo", label: "Catálogo", icon: "🏷️" };
 
 export default function NavInferior({
   nombreUsuario,
-  mostrarCatalogo,
+  mostrarCompras,
 }: {
   nombreUsuario: string;
-  mostrarCatalogo: boolean;
+  mostrarCompras: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const items = mostrarCatalogo
-    ? [...ITEMS_BASE.slice(0, 2), ITEM_CATALOGO, ITEMS_BASE[2]]
+  const items = mostrarCompras
+    ? [...ITEMS_BASE.slice(0, 2), ITEM_COMPRAS, ITEM_CATALOGO, ITEMS_BASE[2]]
     : ITEMS_BASE;
 
   async function salir() {
@@ -53,10 +53,10 @@ export default function NavInferior({
               }`}
             >
               <span className="text-2xl">{item.icon}</span>
-              {/* Cuando aparece la pestaña Catálogo el ancho por ítem se
-                  achica: el texto baja un escalón para que "Producción" no se
-                  corte en pantallas de 360 px. */}
-              <span className={items.length > 3 ? "text-[11px]" : "text-sm"}>{item.label}</span>
+              {/* Con 5 pestañas (roles con Compras + Catálogo) el ancho por
+                  ítem se achica: el texto baja un escalón para que "Producción"
+                  no se corte en pantallas de 360 px. */}
+              <span className={items.length > 4 ? "text-[11px]" : "text-sm"}>{item.label}</span>
             </Link>
           );
         })}

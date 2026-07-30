@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (existente) return NextResponse.json({ cliente: existente });
 
   const info = await db
-    .prepare("INSERT INTO clientes (nombre, ciudad, lista_difusion, creado_en) VALUES (?, ?, ?, datetime('now'))")
+    .prepare("INSERT INTO clientes (nombre, ciudad, lista_difusion) VALUES (?, ?, ?)")
     .run(nombreLimpio, ciudad ?? null, lista_difusion ?? null);
 
   const cliente = await db.prepare("SELECT * FROM clientes WHERE id = ?").get(info.lastInsertRowid);

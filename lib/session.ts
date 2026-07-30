@@ -39,3 +39,13 @@ export function setSesionCookieName() {
 export function puedeEditarPrecios(rol: string): boolean {
   return ["alejandro", "javier", "mercedes"].includes(rol);
 }
+
+/**
+ * Orden de Compra (Etapa 3): hoja sensible con precios de proveedores.
+ * Mismo criterio de acceso que los precios de venta — Francisco no la ve.
+ * Es una función separada de puedeEditarPrecios porque son permisos
+ * conceptualmente distintos, aunque hoy coincidan los roles.
+ */
+export function puedeVerCostos(rol: string): boolean {
+  return ["alejandro", "javier", "mercedes"].includes(rol);
+}

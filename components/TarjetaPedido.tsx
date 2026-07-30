@@ -28,7 +28,13 @@ function fechaLegible(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
+export default function TarjetaPedido({
+  pedido,
+  onCambiado,
+}: {
+  pedido: PedidoConItems;
+  onCambiado?: () => void;
+}) {
   const router = useRouter();
   const [copiado, setCopiado] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +55,7 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
         return;
       }
       router.refresh();
+      onCambiado?.();
     } catch {
       setError("No tenés conexión a internet. Probá de nuevo.");
     }
@@ -70,6 +77,7 @@ export default function TarjetaPedido({ pedido }: { pedido: PedidoConItems }) {
         return;
       }
       router.refresh();
+      onCambiado?.();
     } catch {
       setError("No tenés conexión a internet. Probá de nuevo.");
     } finally {

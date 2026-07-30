@@ -11,28 +11,51 @@ export async function GET(req: NextRequest) {
 
   const params = req.nextUrl.searchParams;
   const estado = params.get("estado");
-  const offset = Math.max(0, parseInt(params.get("offset") ?? "0", 10) || 0);
-  const limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "20", 10) || 20));
+  const desde = params.get("desde");
+  const hasta = params.get("hasta");
 
   if (estado && !ESTADOS_VALIDOS.includes(estado)) {
     return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
   }
 
-  const whereEstado = estado ? "WHERE p.estado = ?" : "";
-  const args = estado ? [estado, limit + 1, offset] : [limit + 1, offset];
+  let filas: any[];
+  let hasMore = false;
 
-  const pedidos = (await db
-    .prepare(
-      `SELECT p.*, c.nombre AS cliente_nombre, c.ciudad AS cliente_ciudad
-       FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
-       ${whereEstado}
-       ORDER BY p.fecha_entrega ASC, p.id DESC
-       LIMIT ? OFFSET ?`
-    )
-    .all(...args)) as any[];
+  if (desde && hasta) {
+    // Vista calendario: trae todos los pedidos del rango de fechas, sin paginar.
+    const condiciones = ["p.fecha_entrega BETWEEN ? AND ?"];
+    const args: any[] = [desde, hasta];
+    if (estado) {
+      condiciones.push("p.estado = ?");
+      args.push(estado);
+    }
+    filas = (await db
+      .prepare(
+        `SELECT p.*, c.nombre AS cliente_nombre, c.ciudad AS cliente_ciudad
+         FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
+         WHERE ${condiciones.join(" AND ")}
+         ORDER BY p.fecha_entrega ASC, p.id DESC`
+      )
+      .all(...args)) as any[];
+  } else {
+    const offset = Math.max(0, parseInt(params.get("offset") ?? "0", 10) || 0);
+    const limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "20", 10) || 20));
+    const whereEstado = estado ? "WHERE p.estado = ?" : "";
+    const args = estado ? [estado, limit + 1, offset] : [limit + 1, offset];
 
-  const hasMore = pedidos.length > limit;
-  const pagina = hasMore ? pedidos.slice(0, limit) : pedidos;
+    const resultado = (await db
+      .prepare(
+        `SELECT p.*, c.nombre AS cliente_nombre, c.ciudad AS cliente_ciudad
+         FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
+         ${whereEstado}
+         ORDER BY p.fecha_entrega ASC, p.id DESC
+         LIMIT ? OFFSET ?`
+      )
+      .all(...args)) as any[];
+
+    hasMore = resultado.length > limit;
+    filas = hasMore ? resultado.slice(0, limit) : resultado;
+  }
 
   const items = db.prepare(
     `SELECT pi.*, pr.linea, pr.formato FROM pedido_items pi
@@ -41,7 +64,7 @@ export async function GET(req: NextRequest) {
   );
 
   const pedidosConItems = await Promise.all(
-    pagina.map(async (p) => ({
+    filas.map(async (p) => ({
       ...p,
       items: await items.all(p.id),
     }))
