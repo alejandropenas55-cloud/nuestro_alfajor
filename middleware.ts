@@ -43,7 +43,32 @@ function esHostDeCatalogo(host: string): boolean {
   return host.startsWith("catalogo.");
 }
 
+// Pausa manual del ambiente de prueba: Mercedes cargó pedidos reales acá por
+// error pensando que era producción (2026-07-30). Hasta que Alejandro pida
+// retomar el testeo, esta rama no deja entrar a nadie, para que no se vuelva
+// a cargar nada acá. Solo corre en la rama "staging" (VERCEL_GIT_COMMIT_REF
+// lo pone Vercel automáticamente): producción y desarrollo no se ven afectados.
+function ambientePausado(): boolean {
+  return process.env.VERCEL_GIT_COMMIT_REF === "staging";
+}
+
+function paginaPausado(): NextResponse {
+  return new NextResponse(
+    `<!doctype html><html><head><meta charset="utf-8"><title>Ambiente de prueba pausado</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"></head>
+    <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f7f1ea;color:#5a3d2b;text-align:center;padding:2rem;box-sizing:border-box;">
+      <div>
+        <h1>Ambiente de prueba pausado</h1>
+        <p>Este ambiente está pausado temporalmente. Vuelve a estar disponible cuando Alejandro lo indique.</p>
+      </div>
+    </body></html>`,
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
+
 export function middleware(req: NextRequest) {
+  if (ambientePausado()) return paginaPausado();
+
   // El puerto no forma parte del nombre; en desarrollo el host viene como
   // "catalogo.localhost:3000".
   const host = (req.headers.get("host") || "").toLowerCase().split(":")[0];
