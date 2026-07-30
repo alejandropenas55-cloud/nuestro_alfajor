@@ -48,11 +48,14 @@ type Solapa = "quienes" | "condiciones" | "pedidos" | "ganas";
 // un porcentaje sobre el costo, o "le sumo tantos pesos a cada paquete".
 type ModoMargen = "porcentaje" | "pesos";
 
+// Pedidos es lo primero y lo que se ve al entrar: es lo que un revendedor
+// viene a hacer. Condiciones y Quiénes somos van al final, en ese orden,
+// porque son consulta, no la tarea principal.
 const SOLAPAS: Array<[Solapa, string]> = [
-  ["quienes", "Quiénes somos"],
-  ["condiciones", "Condiciones comerciales"],
   ["pedidos", "Pedidos"],
   ["ganas", "Cuánto ganás"],
+  ["condiciones", "Condiciones comerciales"],
+  ["quienes", "Quiénes somos"],
 ];
 
 export default function ListaPrecios({
@@ -75,7 +78,7 @@ export default function ListaPrecios({
   const condicionesCanal = textos.condiciones.filter((c) =>
     lista === "mayorista" ? c.visible_mayorista !== 0 : c.visible_distribuidor !== 0
   );
-  const [solapa, setSolapa] = useState<Solapa>("quienes");
+  const [solapa, setSolapa] = useState<Solapa>("pedidos");
   // Cantidad como TEXTO: los pedidos mayoristas son por volumen y hay que
   // poder tipear "30" sin que el campo se reescriba en cada tecla.
   const [cant, setCant] = useState<Record<number, string>>({});
