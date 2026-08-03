@@ -151,6 +151,13 @@ const COLUMNAS_NUEVAS = [
   // Qué condición se ve en cada página de precios (default: en las dos).
   "ALTER TABLE catalogo_condiciones ADD COLUMN visible_mayorista INTEGER NOT NULL DEFAULT 1",
   "ALTER TABLE catalogo_condiciones ADD COLUMN visible_distribuidor INTEGER NOT NULL DEFAULT 1",
+  // Fecha de carga del cliente. Turso no permite default no-constante en
+  // ALTER TABLE, así que la columna se agrega sin default y el valor lo pone
+  // siempre la app al insertar (ver app/api/clientes/route.ts). Los clientes
+  // que ya existían quedan con la fecha de esta migración (no se puede
+  // reconstruir cuándo se cargó cada uno en el pasado).
+  "ALTER TABLE clientes ADD COLUMN creado_en TEXT",
+  "UPDATE clientes SET creado_en = datetime('now') WHERE creado_en IS NULL",
 ];
 
 let schemaReady: Promise<unknown> | null = null;
