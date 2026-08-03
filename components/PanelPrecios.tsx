@@ -18,6 +18,11 @@ export default function PanelPrecios({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [agregandoAbierto, setAgregandoAbierto] = useState(false);
+  const [nuevo, setNuevo] = useState<Partial<Producto>>({ unidad: "paquete" });
+  const [agregando, setAgregando] = useState(false);
+  const [errorNuevo, setErrorNuevo] = useState<string | null>(null);
+
   function empezarEdicion(p: Producto) {
     setEditandoId(p.id);
     setBorrador({
@@ -50,6 +55,35 @@ export default function PanelPrecios({
       setError(e.message ?? "El servidor no responde, probá de nuevo.");
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function agregarProducto() {
+    setAgregando(true);
+    setErrorNuevo(null);
+    try {
+      const res = await fetch("/api/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linea: nuevo.linea,
+          formato: nuevo.formato,
+          unidad: nuevo.unidad,
+          precio_hasta: Number(nuevo.precio_hasta),
+          precio_desde: Number(nuevo.precio_desde),
+          fecha_corte: nuevo.fecha_corte,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo agregar el producto.");
+      setProductos((prev) => [...prev, data.producto]);
+      setNuevo({ unidad: "paquete" });
+      setAgregandoAbierto(false);
+      router.refresh();
+    } catch (e: any) {
+      setErrorNuevo(e.message ?? "El servidor no responde, probá de nuevo.");
+    } finally {
+      setAgregando(false);
     }
   }
 
@@ -148,6 +182,101 @@ export default function PanelPrecios({
       {error && (
         <div className="rounded-xl bg-alerta-500/10 border border-alerta-500/30 text-alerta-500 text-sm px-3 py-2 mt-3">
           {error}
+        </div>
+      )}
+
+      {puedeEditar && (
+        <div className="mt-4 pt-3 border-t border-masa-100">
+          {!agregandoAbierto ? (
+            <button
+              onClick={() => setAgregandoAbierto(true)}
+              className="btn-secundario w-full !py-2 !text-sm"
+            >
+              + Agregar producto nuevo
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <label className="text-xs text-dulce-500">
+                Línea (nombre del producto)
+                <input
+                  type="text"
+                  placeholder="Ej: Chocolate Semiamargo"
+                  className="input-grande !py-2 !text-base mt-1"
+                  value={nuevo.linea ?? ""}
+                  onChange={(e) => setNuevo((n) => ({ ...n, linea: e.target.value }))}
+                />
+              </label>
+              <label className="text-xs text-dulce-500">
+                Formato
+                <input
+                  type="text"
+                  placeholder="Ej: x7, x14, bandeja18"
+                  className="input-grande !py-2 !text-base mt-1"
+                  value={nuevo.formato ?? ""}
+                  onChange={(e) => setNuevo((n) => ({ ...n, formato: e.target.value }))}
+                />
+              </label>
+              <label className="text-xs text-dulce-500">
+                Precio hasta la fecha de corte
+                <input
+                  type="number"
+                  className="input-grande !py-2 !text-base mt-1"
+                  value={nuevo.precio_hasta ?? ""}
+                  onChange={(e) => setNuevo((n) => ({ ...n, precio_hasta: Number(e.target.value) }))}
+                />
+              </label>
+              <label className="text-xs text-dulce-500">
+                Precio desde la fecha de corte
+                <input
+                  type="number"
+                  className="input-grande !py-2 !text-base mt-1"
+                  value={nuevo.precio_desde ?? ""}
+                  onChange={(e) => setNuevo((n) => ({ ...n, precio_desde: Number(e.target.value) }))}
+                />
+              </label>
+              <label className="text-xs text-dulce-500">
+                Fecha de corte (a partir de qué entrega rige el precio nuevo)
+                <input
+                  type="date"
+                  lang="es-AR"
+                  className="input-grande !py-2 !text-base mt-1"
+                  value={nuevo.fecha_corte ?? ""}
+                  onChange={(e) => setNuevo((n) => ({ ...n, fecha_corte: e.target.value }))}
+                />
+              </label>
+
+              {errorNuevo && (
+                <div className="rounded-xl bg-alerta-500/10 border border-alerta-500/30 text-alerta-500 text-sm px-3 py-2">
+                  {errorNuevo}
+                </div>
+              )}
+
+              <p className="text-xs text-dulce-400">
+                Esto solo agrega el producto a Pedidos y Precios. Si también querés que aparezca en
+                el catálogo público, hay que cargarlo aparte desde /editar-catalogo.
+              </p>
+
+              <div className="flex gap-2 mt-1">
+                <button
+                  onClick={agregarProducto}
+                  disabled={agregando || !nuevo.linea?.trim() || !nuevo.formato?.trim()}
+                  className="btn-confirmar flex-1 !py-2 !text-sm"
+                >
+                  {agregando ? "Agregando..." : "Agregar"}
+                </button>
+                <button
+                  onClick={() => {
+                    setAgregandoAbierto(false);
+                    setErrorNuevo(null);
+                    setNuevo({ unidad: "paquete" });
+                  }}
+                  className="btn-secundario flex-1 !py-2 !text-sm"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
