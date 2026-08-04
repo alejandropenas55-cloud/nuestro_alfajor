@@ -1,5 +1,6 @@
 import { getSesion, puedeEditarPrecios } from "@/lib/session";
 import { leerTextos, listarCatalogoCompleto } from "@/lib/catalogo";
+import { listarProductos } from "@/lib/pricing";
 import PanelCatalogo from "@/components/PanelCatalogo";
 import PanelTextosCatalogo from "@/components/PanelTextosCatalogo";
 
@@ -7,9 +8,10 @@ export const dynamic = "force-dynamic";
 
 export default async function CatalogoInternoPage() {
   const sesion = await getSesion();
-  const [productos, textos] = await Promise.all([
+  const [productos, textos, productosSistema] = await Promise.all([
     listarCatalogoCompleto(),
     leerTextos(),
+    listarProductos(),
   ]);
 
   return (
@@ -37,6 +39,7 @@ export default async function CatalogoInternoPage() {
 
       <PanelCatalogo
         productosIniciales={productos}
+        productosSistema={productosSistema}
         puedeEditar={puedeEditarPrecios(sesion?.rol ?? "")}
       />
     </div>

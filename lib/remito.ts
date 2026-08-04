@@ -1,4 +1,5 @@
-import { nombreProducto, type Producto } from "./pricing";
+import { NOMBRE_CANAL, nombreProducto, type Producto } from "./pricing";
+import type { Lista } from "./formato";
 
 export type ItemRemito = {
   producto: Producto;
@@ -19,8 +20,10 @@ export function generarTextoRemito(params: {
   clienteNombre: string;
   fechaEntrega: string;
   items: ItemRemito[];
+  /** Con qué lista de precios se valorizó (ver lib/pricing.ts). */
+  canal: Lista;
 }): string {
-  const { clienteNombre, fechaEntrega, items } = params;
+  const { clienteNombre, fechaEntrega, items, canal } = params;
 
   const lineas = items.map((it) => {
     const subtotal = it.cantidad * it.precioUnitario;
@@ -35,6 +38,7 @@ export function generarTextoRemito(params: {
     `📦 *Nuestro Alfajor* — Remito`,
     `👤 Cliente: ${clienteNombre}`,
     `📅 Entrega: ${fechaLegible(fechaEntrega)}`,
+    `🏷️ Lista: ${NOMBRE_CANAL[canal]}`,
     ``,
     ...lineas,
     ``,

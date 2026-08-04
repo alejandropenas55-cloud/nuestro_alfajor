@@ -1,0 +1,163 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { nombreProducto, type Producto } from "./producto-types";
+import type { Cliente } from "./clientes";
+
+export type ClienteSugerido =
+  | { encontrado: true; cliente_id: number; nombre: string }
+  | { encontrado: false; nombre_sugerido: string | null };
+
+export type ItemInterpretado = { producto_id: number; cantidad: number };
+
+export type PedidoInterpretado = {
+  cliente: ClienteSugerido;
+  fecha_entrega: string | null;
+  items: ItemInterpretado[];
+  texto_no_interpretado: string | null;
+};
+
+const TOOL_REPORTAR_PEDIDO = {
+  name: "reportar_pedido_interpretado",
+  description: "Reporta el pedido interpretado a partir del mensaje del cliente.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      cliente_id: {
+        type: ["integer", "null"],
+        description: "id del cliente si matchea uno existente de la lista, null si no.",
+      },
+      nombre_sugerido: {
+        type: ["string", "null"],
+        description: "nombre del cliente tal como aparece en el mensaje, solo si cliente_id es null.",
+      },
+      fecha_entrega: {
+        type: ["string", "null"],
+        description: "fecha de entrega en formato ISO yyyy-mm-dd si se menciona o se puede inferir, si no null.",
+      },
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            producto_id: { type: "integer" },
+            cantidad: { type: "integer" },
+          },
+          required: ["producto_id", "cantidad"],
+        },
+      },
+      texto_no_interpretado: {
+        type: ["string", "null"],
+        description: "fragmentos del mensaje que no se pudieron mapear a un cliente o producto conocido.",
+      },
+    },
+    required: ["cliente_id", "nombre_sugerido", "fecha_entrega", "items", "texto_no_interpretado"],
+  },
+};
+
+function armarSystemPrompt(clientes: Cliente[], productos: Producto[], hoy: string): string {
+  const catalogo = productos.map((p) => `id=${p.id}: ${nombreProducto(p)}`).join("\n");
+  const listaClientes = clientes.map((c) => `id=${c.id}: ${c.nombre}`).join("\n");
+
+  return `Sos un asistente que interpreta pedidos de alfajores recibidos por WhatsApp (texto o transcripción de audio) para una fábrica argentina llamada "Nuestro Alfajor".
+
+Tu tarea es extraer del mensaje: el cliente, la fecha de entrega y las cantidades por producto, usando ÚNICAMENTE los ids del catálogo y la lista de clientes de abajo. Nunca inventes ids que no estén en estas listas.
+
+CATÁLOGO DE PRODUCTOS (id: nombre):
+${catalogo}
+
+CLIENTES EXISTENTES (id: nombre):
+${listaClientes}
+
+Reglas:
+- Si el nombre del cliente en el mensaje coincide (aunque sea con mayúsculas/minúsculas distintas o nombre/apellido parcial) con uno de la lista, devolvé ese cliente_id y dejá nombre_sugerido en null.
+- Si no coincide con ninguno, dejá cliente_id en null y poné en nombre_sugerido el nombre tal como aparece en el mensaje (o null si no se menciona ningún nombre).
+- Para cada producto mencionado, buscá el id más parecido en el catálogo. Si no hay ningún producto del catálogo que se parezca, no lo incluyas en "items" y agregá esa parte del texto a "texto_no_interpretado".
+- Las fechas relativas ("mañana", "el viernes", "el 15") interpretalas tomando como hoy la fecha ${hoy}. Si no hay ninguna mención de fecha, dejá fecha_entrega en null.
+- texto_no_interpretado: cualquier parte del pedido (productos, cantidades, aclaraciones) que no pudiste mapear con confianza. Si interpretaste todo, dejalo en null.
+- Llamá siempre a la herramienta reportar_pedido_interpretado con tu resultado, incluso si quedó todo vacío.`;
+}
+
+function getClienteAnthropic(): Anthropic {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("Falta configurar ANTHROPIC_API_KEY en el servidor.");
+  }
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+
+// Nunca confía ciegamente en lo que devuelve el modelo: descarta cualquier
+// cliente_id/producto_id que no exista en las listas reales (podría ser una
+// alucinación del modelo) y lo manda a texto_no_interpretado en vez de
+// dejarlo pasar.
+function validarRespuesta(input: any, clientes: Cliente[], productos: Producto[]): PedidoInterpretado {
+  const idsClientes = new Set(clientes.map((c) => c.id));
+  const idsProductos = new Set(productos.map((p) => p.id));
+
+  const cliente: ClienteSugerido =
+    typeof input.cliente_id === "number" && idsClientes.has(input.cliente_id)
+      ? {
+          encontrado: true,
+          cliente_id: input.cliente_id,
+          nombre: clientes.find((c) => c.id === input.cliente_id)!.nombre,
+        }
+      : {
+          encontrado: false,
+          nombre_sugerido: typeof input.nombre_sugerido === "string" ? input.nombre_sugerido : null,
+        };
+
+  const itemsCrudos = Array.isArray(input.items) ? input.items : [];
+  const items: ItemInterpretado[] = [];
+  const descartados: string[] = [];
+  for (const it of itemsCrudos) {
+    if (
+      typeof it.producto_id === "number" &&
+      idsProductos.has(it.producto_id) &&
+      Number.isInteger(it.cantidad) &&
+      it.cantidad > 0
+    ) {
+      items.push({ producto_id: it.producto_id, cantidad: it.cantidad });
+    } else {
+      descartados.push(JSON.stringify(it));
+    }
+  }
+
+  const fecha_entrega =
+    typeof input.fecha_entrega === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.fecha_entrega)
+      ? input.fecha_entrega
+      : null;
+
+  const partes = [
+    typeof input.texto_no_interpretado === "string" ? input.texto_no_interpretado : null,
+    descartados.length ? `Productos no reconocidos: ${descartados.join(", ")}` : null,
+  ].filter(Boolean) as string[];
+
+  return {
+    cliente,
+    fecha_entrega,
+    items,
+    texto_no_interpretado: partes.length ? partes.join(" / ") : null,
+  };
+}
+
+export async function interpretarPedido(
+  texto: string,
+  clientes: Cliente[],
+  productos: Producto[]
+): Promise<PedidoInterpretado> {
+  const anthropic = getClienteAnthropic();
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  const respuesta = await anthropic.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: 1024,
+    system: armarSystemPrompt(clientes, productos, hoy),
+    tools: [TOOL_REPORTAR_PEDIDO],
+    tool_choice: { type: "tool", name: "reportar_pedido_interpretado" },
+    messages: [{ role: "user", content: texto }],
+  });
+
+  const bloqueTool = respuesta.content.find((b) => b.type === "tool_use");
+  if (!bloqueTool || bloqueTool.type !== "tool_use") {
+    throw new Error("La IA no devolvió un resultado interpretable.");
+  }
+
+  return validarRespuesta(bloqueTool.input, clientes, productos);
+}

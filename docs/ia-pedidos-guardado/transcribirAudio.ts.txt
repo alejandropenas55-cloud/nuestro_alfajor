@@ -1,0 +1,18 @@
+import OpenAI from "openai";
+
+function getClienteOpenAI(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("Falta configurar OPENAI_API_KEY en el servidor.");
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+export async function transcribirAudio(archivo: File): Promise<string> {
+  const openai = getClienteOpenAI();
+  const resultado = await openai.audio.transcriptions.create({
+    file: archivo,
+    model: "gpt-4o-mini-transcribe",
+    language: "es",
+  });
+  return resultado.text;
+}

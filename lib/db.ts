@@ -158,6 +158,10 @@ const COLUMNAS_NUEVAS = [
   // reconstruir cuándo se cargó cada uno en el pasado).
   "ALTER TABLE clientes ADD COLUMN creado_en TEXT",
   "UPDATE clientes SET creado_en = datetime('now') WHERE creado_en IS NULL",
+  // Canal comercial del pedido: define con qué lista de precios se valoriza
+  // (ver precioPorCanal en lib/pricing.ts). NULL = pedidos anteriores a esta
+  // columna; se leen como mayorista, que es la lista con la que se cargaron.
+  "ALTER TABLE pedidos ADD COLUMN canal TEXT",
 ];
 
 let schemaReady: Promise<unknown> | null = null;

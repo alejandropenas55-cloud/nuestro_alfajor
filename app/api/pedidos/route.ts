@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getSesion } from "@/lib/session";
-import { getProducto, precioVigente } from "@/lib/pricing";
+import {
+  cargarPreciosDelCanal,
+  getProducto,
+  normalizarCanal,
+  precioParaPedido,
+} from "@/lib/pricing";
 import { generarTextoRemito } from "@/lib/remito";
 
 const ESTADOS_VALIDOS = ["Pendiente", "Remito Enviado", "Entregado"];
@@ -83,6 +88,7 @@ export async function POST(req: NextRequest) {
     fecha_entrega: string;
     items: { producto_id: number; cantidad: number }[];
   };
+  const canal = normalizarCanal(body.canal);
 
   if (!cliente_id || !fecha_entrega || !items?.length) {
     return NextResponse.json(
@@ -96,13 +102,14 @@ export async function POST(req: NextRequest) {
     | undefined;
   if (!cliente) return NextResponse.json({ error: "Cliente no encontrado." }, { status: 404 });
 
+  const preciosDelCanal = await cargarPreciosDelCanal(canal);
   const itemsResueltos = await Promise.all(
     items
       .filter((it) => it.cantidad > 0)
       .map(async (it) => {
         const producto = await getProducto(it.producto_id);
         if (!producto) throw new Error("Producto no encontrado: " + it.producto_id);
-        const precioUnitario = precioVigente(producto, fecha_entrega);
+        const precioUnitario = precioParaPedido(producto, fecha_entrega, preciosDelCanal);
         return { producto, cantidad: it.cantidad, precioUnitario };
       })
   );
@@ -115,6 +122,7 @@ export async function POST(req: NextRequest) {
     clienteNombre: cliente.nombre,
     fechaEntrega: fecha_entrega,
     items: itemsResueltos,
+    canal,
   });
 
   const hoy = new Date().toISOString().slice(0, 10);
@@ -124,9 +132,9 @@ export async function POST(req: NextRequest) {
   let pedidoId: number;
   try {
     const info = await tx.execute({
-      sql: `INSERT INTO pedidos (fecha_pedido, fecha_entrega, cliente_id, estado, texto_remito)
-            VALUES (?, ?, ?, 'Pendiente', ?)`,
-      args: [hoy, fecha_entrega, cliente_id, textoRemito],
+      sql: `INSERT INTO pedidos (fecha_pedido, fecha_entrega, cliente_id, estado, texto_remito, canal)
+            VALUES (?, ?, ?, 'Pendiente', ?, ?)`,
+      args: [hoy, fecha_entrega, cliente_id, textoRemito, canal],
     });
     pedidoId = Number(info.lastInsertRowid!);
     for (const it of itemsResueltos) {

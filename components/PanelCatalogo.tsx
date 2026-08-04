@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CatalogoProducto } from "@/lib/catalogo";
+import { nombreProducto, type Producto } from "@/lib/producto-types";
 import { precioAR } from "@/lib/formato";
 
 // --------------------------------------------------------------------------
@@ -30,13 +31,16 @@ type Borrador = {
   badge: string;
   tag_color: string;
   minimo_propio: string; // "" = entra en el mínimo general surtido
+  produccion_ref: string; // "" = sin vincular a un producto del sistema
 };
 
 export default function PanelCatalogo({
   productosIniciales,
+  productosSistema,
   puedeEditar,
 }: {
   productosIniciales: CatalogoProducto[];
+  productosSistema: Producto[];
   puedeEditar: boolean;
 }) {
   const router = useRouter();
@@ -137,14 +141,16 @@ export default function PanelCatalogo({
             badge: "",
             tag_color: COLORES[0][0],
             minimo_propio: "",
+            produccion_ref: "",
           }}
+          productosSistema={productosSistema}
           ocupado={ocupado}
           onCancelar={() => setCreando(false)}
           onGuardar={async (b) => {
             const ok = await llamar("/api/catalogo", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(conPrecios(b)),
+              body: JSON.stringify(aPayload(b)),
             });
             if (ok) setCreando(false);
           }}
@@ -179,6 +185,12 @@ export default function PanelCatalogo({
               {!p.activo && (
                 <p className="text-xs text-alerta-500 font-semibold mt-1.5">
                   Desactivado — no se ve en el catálogo público
+                </p>
+              )}
+              {p.produccion_ref === null && (
+                <p className="text-xs text-dulce-400 mt-1.5">
+                  Sin vincular a un producto del sistema — si un cliente lo pide
+                  desde el catálogo, hay que cargarlo a mano
                 </p>
               )}
             </div>
@@ -248,11 +260,13 @@ export default function PanelCatalogo({
                   badge: p.badge,
                   tag_color: p.tag_color,
                   minimo_propio: p.minimo_propio ? String(p.minimo_propio) : "",
+                  produccion_ref: p.produccion_ref ? String(p.produccion_ref) : "",
                 }}
+                productosSistema={productosSistema}
                 ocupado={ocupado}
                 onCancelar={() => setEditando(null)}
                 onGuardar={async (b) => {
-                  const ok = await guardar(p.id, conPrecios(b));
+                  const ok = await guardar(p.id, aPayload(b));
                   if (ok) setEditando(null);
                 }}
               />
@@ -266,14 +280,19 @@ export default function PanelCatalogo({
 
 // ---------------------------------------------------------------------------
 
-/** Los tres precios viajan igual: campo vacío = "a confirmar" (NULL). */
-function conPrecios(b: Borrador) {
+/**
+ * Del borrador (todo texto, como lo tipea la persona) al cuerpo que espera la
+ * API. Los tres precios viajan igual: campo vacío = "a confirmar" (NULL). El
+ * vínculo con el producto del sistema sigue la misma regla: vacío = NULL.
+ */
+function aPayload(b: Borrador) {
   const n = (v: string) => (v.trim() === "" ? null : Number(v));
   return {
     ...b,
     precio_minorista: n(b.precio_minorista),
     precio: n(b.precio),
     precio_distribuidor: n(b.precio_distribuidor),
+    produccion_ref: n(b.produccion_ref),
   };
 }
 
@@ -326,12 +345,14 @@ function BotonChico({
 function Formulario({
   titulo,
   inicial,
+  productosSistema,
   ocupado,
   onGuardar,
   onCancelar,
 }: {
   titulo: string;
   inicial: Borrador;
+  productosSistema: Producto[];
   ocupado: boolean;
   onGuardar: (b: Borrador) => void;
   onCancelar: () => void;
@@ -401,6 +422,29 @@ function Formulario({
           página. Las otras dos no se ven afectadas.
         </p>
       </div>
+
+      {/* El puente entre las dos listas de productos: la comercial (esta) y la
+          operativa (Pedidos y Producción). Sin este vínculo, un pedido pegado
+          desde el catálogo no puede cargar este producto solo. */}
+      <Campo label="Producto del sistema al que corresponde">
+        <select
+          className="input-grande !text-base !py-3"
+          value={b.produccion_ref}
+          onChange={(e) => set("produccion_ref", e.target.value)}
+        >
+          <option value="">— Sin vincular —</option>
+          {productosSistema.map((p) => (
+            <option key={p.id} value={String(p.id)}>
+              {nombreProducto(p)}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-dulce-400 mt-1.5">
+          Es el mismo producto, escrito como lo llama el sistema por dentro. Se
+          usa cuando pegás en Pedidos un mensaje que salió de este catálogo: sin
+          vincular, ese renglón te lo va a marcar como no reconocido.
+        </p>
+      </Campo>
 
       <Campo label="Mínimo de compra propio (opcional)">
         <input

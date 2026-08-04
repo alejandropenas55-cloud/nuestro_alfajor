@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getSesion } from "@/lib/session";
+import { listarClientes } from "@/lib/clientes";
 
 export async function GET() {
   if (!(await getSesion())) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  const clientes = await db.prepare("SELECT * FROM clientes ORDER BY nombre").all();
+  const clientes = await listarClientes();
   return NextResponse.json({ clientes });
 }
 

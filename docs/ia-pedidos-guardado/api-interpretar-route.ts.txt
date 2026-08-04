@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSesion } from "@/lib/session";
+import { listarClientes } from "@/lib/clientes";
+import { listarProductos } from "@/lib/pricing";
+import { transcribirAudio } from "@/lib/transcribirAudio";
+import { interpretarPedido } from "@/lib/interpretarPedido";
+
+// Nota: en el plan Hobby de Vercel el body de una Serverless Function está
+// limitado a ~4.5MB. Las notas de voz de WhatsApp normalmente pesan poco y
+// entran sin problema; un audio más pesado devuelve un 413 de la plataforma
+// (no se resuelve con streaming en esta etapa).
+export async function POST(req: NextRequest) {
+  const sesion = await getSesion();
+  if (!sesion) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+
+  let texto: string;
+  try {
+    const contentType = req.headers.get("content-type") ?? "";
+    if (contentType.includes("multipart/form-data")) {
+      const form = await req.formData();
+      const audio = form.get("audio");
+      if (!(audio instanceof File) || audio.size === 0) {
+        return NextResponse.json({ error: "No se recibió ningún archivo de audio." }, { status: 400 });
+      }
+      texto = await transcribirAudio(audio);
+    } else {
+      const body = await req.json();
+      texto = String(body.texto ?? "").trim();
+    }
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message ?? "No se pudo procesar el audio." }, { status: 500 });
+  }
+
+  if (!texto) {
+    return NextResponse.json({ error: "No hay texto para interpretar." }, { status: 400 });
+  }
+
+  try {
+    const [clientes, productos] = await Promise.all([listarClientes(), listarProductos()]);
+    const resultado = await interpretarPedido(texto, clientes, productos);
+    return NextResponse.json({ resultado, textoTranscripto: texto });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message ?? "No se pudo interpretar el pedido." }, { status: 500 });
+  }
+}
