@@ -153,12 +153,10 @@ que el pulido visual de una app madura viene después, no en el día uno.
   de cada pantalla interna, sin competir con la identidad de Nuestro
   Alfajor.
 
-## Diseño listo para construir: cargar pedidos pegando el texto de WhatsApp (IA)
+## Pegar un pedido de WhatsApp en Pedidos (construido, agosto 2026)
 
 Idea planteada por Alejandro: reducir el tipeo manual de Mercedes cuando carga
-un pedido que le llegó por WhatsApp. Quedó **diseñado pero no construido** —
-se retoma cuando el uso real de la carga manual lo pida (mismo criterio de
-desbloqueo de siempre).
+un pedido que le llegó por WhatsApp.
 
 **Se descartaron dos caminos más "automáticos" por riesgo/costo:**
 - Leer el WhatsApp real de Mercedes con una librería no oficial (Baileys,
@@ -171,45 +169,65 @@ desbloqueo de siempre).
   probablemente cambiar cómo Mercedes usa ese número desde la app normal.
   Demasiada fricción para el problema que se quiere resolver.
 
-**Camino elegido: "Pegar pedido" + IA, sin tocar WhatsApp para nada.**
+**Camino elegido: leer el mensaje que arma el propio catálogo, sin IA.**
 
-1. En `/pedidos/nuevo` se agrega una segunda forma de cargar (junto a la
-   actual, que sigue existiendo tal cual): un campo para pegar el texto tal
-   cual llega por WhatsApp, con un botón "Interpretar pedido".
-2. Ese botón llama a un endpoint nuevo, `POST /api/pedidos/interpretar`, que
-   manda el texto pegado a un modelo de IA (Claude, vía `@anthropic-ai/sdk`,
-   modelo económico tipo Haiku — alcanza de sobra para esta tarea) junto con
-   el catálogo vigente (`listarProductos()`) y la lista de clientes, pidiendo
-   como respuesta un JSON estricto: cliente sugerido (o "no encontrado"),
-   lista de `{ producto_id, cantidad }`, y cualquier parte del texto que no
-   pudo interpretar.
-3. Esa respuesta **prellena el mismo formulario de siempre**
-   (`FormNuevoPedido`) — no crea el pedido directo. Mercedes ve las
-   cantidades ya cargadas, revisa, corrige si algo se interpretó mal, y
-   **siempre** tiene que elegir ella la fecha de entrega a mano — la IA
-   nunca la completa sola, es el gesto explícito de "reviso y confirmo" que
-   pidió Alejandro.
-4. Si algo del texto no se pudo interpretar, se muestra como aviso visible
-   (no se descarta en silencio) para que lo cargue a mano.
-5. Guardar el pedido sigue siendo exactamente el mismo `POST /api/pedidos`
-   de hoy — este flujo solo cambia cómo se llena el formulario, no cómo se
-   guarda.
+La clave es que los pedidos que llegan por los tres catálogos de la casa
+(`/catalogo`, `/mayorista` y `/distribuidor`) los redacta este mismo sistema,
+con un formato fijo (`10x Alfajor de Maicena x7 — $25.000`). O sea que se
+pueden leer de forma exacta, gratis, sin depender de un servicio externo y sin
+riesgo de que "se invente" un producto. Se descartó usar IA en esta etapa por
+eso mismo: agregaba una cuenta paga y un margen de error para resolver un
+problema que ya estaba resuelto de forma determinística.
 
-**Por qué es seguro por diseño**: nada se guarda automático; la IA solo
-prellena un formulario que igual requiere confirmación humana (mismo riesgo
-que cargar a mano hoy, con menos tipeo). Si la IA falla o no está segura,
-Mercedes siempre puede seguir cargando el pedido manualmente como ya lo hace.
+1. En `/pedidos/nuevo` (y también al editar un pedido) hay un panel plegable
+   **"Pegar un pedido de WhatsApp"**, junto a la carga manual de siempre, que
+   sigue existiendo tal cual.
+2. `lib/leerPedidoPegado.ts` es una función pura — no toca base ni red — que
+   corre en el navegador con el catálogo que la página ya bajó. Reconoce de
+   qué canal salió el mensaje por el saludo, lee las cantidades y mapea cada
+   nombre comercial al producto operativo.
+3. El resultado **prellena el formulario de siempre**, no guarda nada. El
+   cliente y la fecha de entrega los elige siempre la persona: es el gesto
+   explícito de "reviso y confirmo" que pidió Alejandro.
+4. Lo que no se pudo leer se muestra como aviso visible, con el motivo, y
+   nunca se descarta en silencio.
 
-**Piezas nuevas cuando se construya**: dependencia `@anthropic-ai/sdk`,
-variable de entorno `ANTHROPIC_API_KEY` (local y en Vercel), `lib/interpretarPedido.ts`
-(arma el prompt y valida la forma de la respuesta antes de confiar en ella),
-`app/api/pedidos/interpretar/route.ts`, y una pequeña ampliación de
-`FormNuevoPedido` para el modo "pegar texto".
+**El puente entre las dos listas de productos**: el catálogo comercial
+(`catalogo_productos`) y el operativo (`productos`) son entidades separadas a
+propósito y sus nombres no coinciden. La columna `produccion_ref` —que existía
+en el esquema desde el principio sin usarse— es la que las vincula, y se elige
+a mano desde Catálogo → Editar producto. Sin ese vínculo, el renglón se avisa
+como "no lo pude cargar" en vez de adivinar.
+
+**Precio por canal**: la tabla `pedidos` guarda ahora `canal`
+(mayorista / distribuidor / minorista, NULL = pedidos viejos, que se leen como
+mayoristas) y el remito muestra con cuál se valorizó (`🏷️ Lista: ...`).
+
+Para **mayorista** manda la lista de siempre (`productos` + `precioVigente()`):
+esos precios SON la lista mayorista y son los que tienen la fecha de corte, que
+es como el negocio programa un aumento. Si el catálogo se la pisara, el aumento
+programado no se aplicaría nunca. Para **consumidor final** y **distribuidor**
+—que antes no existían en el sistema— el precio sale del catálogo comercial,
+que es donde el cliente lo vio; si el producto no está vinculado o no tiene
+precio cargado en esa lista, cae al precio de siempre.
+
+**El camino con IA quedó guardado, no descartado**: está en
+`docs/ia-pedidos-guardado/` con las instrucciones para retomarlo. Serviría para
+los pedidos que el cliente escribe a mano (y para transcribir notas de voz),
+que es justo lo que el lector determinístico no puede resolver.
 
 ## Qué falta decidir
 
 - Validar el diseño visual con Javier antes de invertir en Stock/Producción
   Real (Etapas 1+), según el riesgo 6 del pre-mortem.
 - Comprar el dominio elegido.
-- Construir "Pegar pedido + IA" cuando la carga manual muestre que vale la
-  pena el esfuerzo (ver sección de arriba).
+- Sumar la IA para los pedidos que el cliente escribe a mano (y las notas de
+  voz), cuando el uso real muestre que vale la pena la cuenta paga. El código
+  está guardado en `docs/ia-pedidos-guardado/`.
+- Pepas Arándano y Pepas Frutos del Bosque: **no se están produciendo** hasta
+  conseguir un proveedor más barato de mermeladas (agosto 2026). Por eso están
+  en `productos` pero no en el catálogo comercial, y nadie las puede pedir
+  desde la web — es lo correcto mientras dure la pausa. Cuando vuelvan a
+  producirse hay que darlas de alta en Catálogo y vincularlas, si no un pedido
+  de esos productos se factura con el precio único de siempre en vez del
+  precio del canal. No borrarlas: la pausa es temporal.

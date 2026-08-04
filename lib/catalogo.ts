@@ -31,6 +31,11 @@ export type CatalogoProducto = {
   tag_color: string;
   activo: number;
   orden: number;
+  // A qué producto de la tabla "productos" (la operativa, la de pedidos y
+  // producción) corresponde este producto comercial. Es lo que permite que un
+  // pedido pegado desde el catálogo se cargue solo: el mensaje trae el nombre
+  // comercial y el sistema necesita el id operativo. NULL = sin vincular.
+  produccion_ref: number | null;
   // Mínimo de compra propio (la Bandeja x14 pide 10). NULL = el producto
   // entra en el mínimo general surtido.
   minimo_propio: number | null;
@@ -43,7 +48,7 @@ export type CatalogoProducto = {
 // imágenes en cada consulta.
 const COLUMNAS = `id, nombre, peso, descripcion,
   precio, precio_minorista, precio_distribuidor,
-  badge, tag_color, activo, orden, minimo_propio,
+  badge, tag_color, activo, orden, minimo_propio, produccion_ref,
   CASE WHEN foto IS NULL THEN NULL
        ELSE '/api/catalogo/' || id || '/foto?v=' || replace(replace(actualizado_en, ' ', '_'), ':', '-')
   END AS foto_url`;
@@ -62,6 +67,22 @@ export async function listarCatalogoPublico(): Promise<CatalogoProducto[]> {
       .prepare(
         `SELECT ${COLUMNAS} FROM catalogo_productos WHERE activo = 1 ORDER BY orden, id`
       )
+      .all()
+  );
+}
+
+/**
+ * Lo mínimo para leer un pedido pegado de WhatsApp: cómo se llama el producto
+ * en el mensaje y a qué producto del sistema corresponde. Van también los
+ * inactivos, porque un cliente puede pegar un mensaje de hace unos días.
+ */
+export async function listarCatalogoParaPegar(): Promise<
+  Array<{ nombre: string; produccion_ref: number | null }>
+> {
+  await seedSiVacio();
+  return aPlano(
+    await db
+      .prepare("SELECT nombre, produccion_ref FROM catalogo_productos ORDER BY orden, id")
       .all()
   );
 }

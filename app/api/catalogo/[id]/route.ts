@@ -21,6 +21,13 @@ const CAMPOS: Record<string, (v: unknown) => unknown> = {
     const n = Math.round(Number(v) || 0);
     return n > 0 ? n : null;
   },
+  // Producto operativo (tabla "productos") al que corresponde este producto
+  // comercial. Vacío = sin vincular: los pedidos pegados desde el catálogo no
+  // van a poder cargar este producto solos.
+  produccion_ref: (v) => {
+    const n = Math.round(Number(v) || 0);
+    return n > 0 ? n : null;
+  },
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

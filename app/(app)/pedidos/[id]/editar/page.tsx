@@ -1,14 +1,18 @@
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
-import { listarProductos } from "@/lib/pricing";
+import { listarClientes } from "@/lib/clientes";
+import { listarProductos, normalizarCanal } from "@/lib/pricing";
+import { listarCatalogoParaPegar } from "@/lib/catalogo";
 import FormNuevoPedido from "@/components/FormNuevoPedido";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditarPedidoPage({ params }: { params: { id: string } }) {
   const pedido = (await db
-    .prepare("SELECT id, cliente_id, fecha_entrega FROM pedidos WHERE id = ?")
-    .get(params.id)) as { id: number; cliente_id: number; fecha_entrega: string } | undefined;
+    .prepare("SELECT id, cliente_id, fecha_entrega, canal FROM pedidos WHERE id = ?")
+    .get(params.id)) as
+    | { id: number; cliente_id: number; fecha_entrega: string; canal: string | null }
+    | undefined;
 
   if (!pedido) notFound();
 
@@ -18,8 +22,11 @@ export default async function EditarPedidoPage({ params }: { params: { id: strin
 
   const cantidadesIniciales = Object.fromEntries(items.map((i) => [i.producto_id, i.cantidad]));
 
-  const clientes = (await db.prepare("SELECT * FROM clientes ORDER BY nombre").all()) as any[];
-  const productos = await listarProductos();
+  const [clientes, productos, catalogoWeb] = await Promise.all([
+    listarClientes(),
+    listarProductos(),
+    listarCatalogoParaPegar(),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,10 +37,12 @@ export default async function EditarPedidoPage({ params }: { params: { id: strin
       <FormNuevoPedido
         clientesIniciales={clientes}
         productos={productos}
+        catalogoWeb={catalogoWeb}
         pedidoId={pedido.id}
         clienteIdInicial={pedido.cliente_id}
         fechaEntregaInicial={pedido.fecha_entrega}
         cantidadesIniciales={cantidadesIniciales}
+        canalInicial={normalizarCanal(pedido.canal)}
       />
     </div>
   );

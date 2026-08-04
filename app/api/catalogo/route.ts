@@ -45,11 +45,12 @@ export async function POST(req: NextRequest) {
     : Number(maxFila.m) + 1;
 
   const minimoPropio = Math.round(Number(body.minimo_propio) || 0);
+  const produccionRef = Math.round(Number(body.produccion_ref) || 0);
 
   const info = await db
     .prepare(
-      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, precio_minorista, precio_distribuidor, badge, tag_color, activo, orden, minimo_propio)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO catalogo_productos (nombre, peso, descripcion, precio, precio_minorista, precio_distribuidor, badge, tag_color, activo, orden, minimo_propio, produccion_ref)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
@@ -62,7 +63,8 @@ export async function POST(req: NextRequest) {
       normalizarColor(body.tag_color),
       body.activo === false || body.activo === 0 ? 0 : 1,
       orden,
-      minimoPropio > 0 ? minimoPropio : null
+      minimoPropio > 0 ? minimoPropio : null,
+      produccionRef > 0 ? produccionRef : null
     );
 
   return NextResponse.json({ ok: true, id: info.lastInsertRowid });
