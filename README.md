@@ -80,7 +80,11 @@ exactamente igual a como está guardado.
   bandejas = 414 pepas para las cuentas de producción, no como pedidos
   separados.
 - **Config**: precios vigentes por producto y lista de clientes (solo
-  lectura por ahora).
+  lectura por ahora), ordenada por fecha de alta — el cliente más nuevo
+  primero — con la fecha de carga de cada uno a la vista. Los clientes que
+  ya estaban antes de que se empezara a guardar esa fecha muestran la fecha
+  de la migración, no la real: de esos no se puede reconstruir cuándo
+  entraron.
 - Instalable como PWA: "Agregar a pantalla de inicio" desde el navegador
   del celular — no hace falta subirla a ninguna tienda de aplicaciones.
 
