@@ -27,6 +27,92 @@
 }
 
 /* --------------------------------------------------------------------------
+   Planilla de producción semanal (/planilla-produccion). Es una pieza de
+   PAPEL, no una pantalla: las medidas van en milímetros.
+   Formato: A5 apaisado (media hoja A4), pedido por producción. El espacio es
+   poquísimo, así que el membrete se comprime al mínimo — logo chico y datos en
+   una sola línea — y todo el alto que sobra va a las filas, que es donde
+   escriben a mano. Se puede cambiar a A4 desde la pantalla si hace falta.
+   -------------------------------------------------------------------------- */
+.plan {
+  --tinta: #17110C; --rojo: #C1272D; --papel: #FBF8F2; --linea: #17110C;
+}
+
+.plan-hoja {
+  background: var(--papel);
+  color: var(--tinta);
+  width: 198mm;              /* A5 apaisado (210mm) menos márgenes */
+  padding: 2.5mm 3mm 3mm;
+  margin: 0 auto;
+  border: 2px solid var(--rojo);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.plan-hoja.plan-a4 { width: 281mm; }
+
+.plan-membrete {
+  display: flex; align-items: center; gap: 3mm; padding-bottom: 1.5mm;
+  border-bottom: 1.2px solid var(--rojo); margin-bottom: 2mm;
+}
+.plan-membrete img { width: 20mm; height: auto; flex: 0 0 auto; }
+.plan-datos { line-height: 1.25; }
+.plan-datos h1 {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  color: var(--rojo); text-transform: uppercase; letter-spacing: .08em;
+  font-size: 4.6mm; line-height: 1; margin: 0; font-weight: 700;
+}
+.plan-contacto { font-size: 2.5mm; margin: .6mm 0 0; color: var(--tinta); }
+.plan-semana {
+  margin-left: auto; text-align: right; font-size: 2.5mm;
+  text-transform: uppercase; letter-spacing: .1em; line-height: 1.3;
+}
+.plan-semana b {
+  display: block; font-family: 'Fredoka', system-ui, sans-serif;
+  font-size: 4.2mm; color: var(--rojo); letter-spacing: .02em;
+}
+
+.plan-tabla { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.plan-tabla th, .plan-tabla td {
+  border: 1px solid var(--linea);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.plan-tabla thead th {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-size: 3.2mm; font-weight: 700; padding: 1.4mm .5mm; letter-spacing: .02em;
+}
+.plan-tabla tbody td { height: 17mm; vertical-align: top; padding: 1mm .8mm; }
+
+/* Primera columna: el día chico y abajo el lote (ddmmaa), que es el dato que
+   producción copia a las cajas. */
+.plan-col-fecha { width: 21mm; }
+.plan-col-obs { width: 40mm; text-align: left !important; }
+.plan-dia { font-size: 2.3mm; text-transform: uppercase; letter-spacing: .08em; color: #6B5540; }
+.plan-lote {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-size: 4.4mm; letter-spacing: .04em; margin-top: .4mm;
+}
+.plan-cant { font-family: 'Fredoka', system-ui, sans-serif; font-size: 5mm; }
+.plan-tabla tbody tr:nth-child(even) td { background: rgba(23, 17, 12, .025); }
+
+/* Barra de controles: existe solo en pantalla, nunca en el papel. */
+.plan-barra {
+  max-width: 281mm; margin: 0 auto 1rem; display: flex; flex-wrap: wrap;
+  align-items: center; gap: .75rem; padding: 1rem;
+}
+
+@media print {
+  .plan-barra, .no-imprimir { display: none !important; }
+  .plan-hoja { width: auto; margin: 0; }
+  body { background: #fff; }
+}
+
+/* En pantalla chica la hoja no entra: se deja desplazar en horizontal en vez
+   de deformarla, porque lo que importa es que salga bien impresa. */
+@media screen and (max-width: 300mm) {
+  .plan { overflow-x: auto; }
+}
+
+/* --------------------------------------------------------------------------
    Página mayorista (/mayoristas). Estilo tomado del packaging real: cuadrillé
    vichy por sabor, cinta negra y condensada pesada — el mismo registro que
    los envases y la etiqueta "ARTESANAL". Va en CSS plano y no en Tailwind
