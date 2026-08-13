@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PanelProduccion from "@/components/PanelProduccion";
 
 export default function ProduccionPage() {
@@ -7,6 +8,13 @@ export default function ProduccionPage() {
       <p className="text-dulce-500 -mt-2">
         Qué hay que producir para una fecha — no solo para mañana.
       </p>
+
+      {/* La planilla de papel de la fábrica: se imprime el lunes con la semana
+          entera y producción la corrige a mano durante la semana. */}
+      <Link href="/planilla-produccion" className="btn-secundario">
+        🖨️ Planilla de la semana
+      </Link>
+
       <PanelProduccion />
     </div>
   );
