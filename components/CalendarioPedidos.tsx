@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import TarjetaPedido, { type PedidoConItems } from "@/components/TarjetaPedido";
+import SelectorVistaPedidos from "@/components/SelectorVistaPedidos";
 
 const FILTROS = ["Todos", "Pendiente", "Remito Enviado", "Entregado"] as const;
 type Filtro = (typeof FILTROS)[number];
@@ -141,6 +142,8 @@ export default function CalendarioPedidos({
 
   return (
     <div className="flex flex-col gap-4">
+      <SelectorVistaPedidos />
+
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {FILTROS.map((f) => (
           <button
