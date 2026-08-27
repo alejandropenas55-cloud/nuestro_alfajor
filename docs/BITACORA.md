@@ -60,8 +60,12 @@ aunque todavía no se haya despachado. Se une por `fecha_entrega`.
 
 **Dónde vive.** API `app/api/pedidos/totales/route.ts`, pantalla
 `app/(app)/pedidos/totales/page.tsx` + `components/TotalesPedidos.tsx`. No toca
-la barra de navegación (ya está llena con 5 pestañas): se entra desde el enlace
-arriba del calendario de Pedidos.
+la barra de navegación (ya está llena con 5 pestañas): se entra desde el
+selector `Calendario | Totales` arriba de las dos pantallas de Pedidos.
+
+**Publicado el mismo día.** Se subió solo este cambio a `publicado` (commit
+`c2ce1bf`), sin arrastrar nada más de `main`. Es la primera vez que se publica
+una reforma suelta y no una etapa entera.
 
 ## 18 de agosto de 2026 — Cómo se decide la compra de la selladora
 
