@@ -2,7 +2,7 @@
 
 > Versión en Markdown del documento original `Hoja_de_Ruta_Sistema_Produccion.docx`
 > (está también en esta carpeta, sin cambios, como fuente original). Preparado por
-> Alejandro Peñas / Palanca Consultores, julio 2026.
+> Alejandro Penas / Palanca Consultores, julio 2026.
 
 ## El camino hacia el sistema completo
 

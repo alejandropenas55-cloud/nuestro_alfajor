@@ -6,7 +6,7 @@
 > —sobre todo— **por qué** cada cosa está decidida como está. Sin esto, la IA
 > escribe código razonable que rompe reglas que no ve.
 >
-> Preparado por Palanca Consultores (Alejandro Peñas), agosto 2026.
+> Preparado por Palanca Consultores (Alejandro Penas), agosto 2026.
 > Compartido con Francisco para que los dos sistemas hablen el mismo idioma.
 
 ---
