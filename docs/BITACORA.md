@@ -18,6 +18,34 @@
 
 ---
 
+## 23 de septiembre de 2026 — Insumos/Recetas publicado en producción real
+
+Alejandro probó todo en el ambiente de "staging" (ver entrada de abajo) y
+confirmó que funcionaba perfecto. Se subió a `publicado` (la rama que Vercel
+realmente publica en el sitio real, https://nuestro-alfajor.vercel.app y el
+proyecto "nuestro-alfajor-ese9" que usa el equipo día a día).
+
+**`publicado` tiene una historia de git separada de `main`** (no es un simple
+atraso como pasaba con `staging`): cada cambio se vuelve a comprometer ahí en
+vez de mergearse. Un merge normal tiró conflictos en 6 archivos. Se resolvió
+sincronizando el CONTENIDO de `publicado` para que sea idéntico al de `main`
+(sin fusionar historias) y manteniendo fuera los 2 documentos internos que
+`publicado` nunca tuvo (`CONTEXTO_PARA_IA_Nuestro_Alfajor.md` y el informe
+para Francisco) — así seguía el mismo patrón que tenía toda su historia
+anterior.
+
+**Corrección importante sobre la entrada de abajo:** lo que se probó en
+"staging" NO es la base real — es una copia vieja (con clientes reales pero
+precios de agosto, ya desactualizados; hay un script viejo en el repo para
+clonar una base Turso a otra, probablemente el origen de esa copia). La base
+real tiene precios más nuevos (con fechas de corte de agosto). Se repitió la
+carga completa de las 11 recetas + los insumos nuevos directamente contra la
+base real (mismo método: fetch autenticado desde el navegador, sin acceso
+directo a la base), y se verificó producto por producto que coincida con lo
+ya probado en staging. Coincide exacto.
+
+---
+
 ## 18-23 de septiembre de 2026 — Insumos/Recetas publicado en `staging`, y `staging` resultó compartir la base real
 
 Se subió todo Insumos/Recetas a `main` y se actualizó `staging` para que sea
