@@ -282,16 +282,13 @@ function BloqueCalculo({
 
               <div className="card">
                 <p className="font-display text-dulce-700 mb-1">Capacidad de armado</p>
-                <p className="text-xs text-dulce-500 mb-2">Referencia (María + Francisco), no depende de la fecha.</p>
+                <p className="text-xs text-dulce-500 mb-2">Referencia (María + Jessi armando, Javier recibe), no depende de la fecha.</p>
                 {CAPACIDAD_ARMADO.map((c) => (
                   <div key={c.turno} className="py-1.5 border-b border-masa-100 last:border-0">
                     <div className="flex justify-between text-dulce-600">
                       <span>{c.turno}</span>
                       <span className="font-body font-semibold">{c.alfajoresPorHora} alfajores/hora</span>
                     </div>
-                    {"nota" in c && c.nota && (
-                      <p className="text-xs text-dulce-400 mt-0.5">{c.nota}</p>
-                    )}
                   </div>
                 ))}
               </div>

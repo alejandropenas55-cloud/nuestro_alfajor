@@ -44,12 +44,18 @@ export const INSUMOS_MASA: {
   { nombre: "Esencia de manteca", unidad: "ml", porAmasijoMF: 0, porAmasijoPepas: 50, proveedor: "—" },
 ];
 
-// Capacidad de armado — referencia estática (María + Francisco), no depende
-// de la fecha elegida.
+// Capacidad de armado — referencia estática, no depende de la fecha elegida.
+// Equipo actual: María y Jessi arman con mangas y los ponen en la cinta de
+// la coquera, Javier los recibe encocados y los coloca en bandejas. Reemplaza
+// el dato de junio (María + Francisco, 504→392→336/hora) porque el equipo y
+// el proceso cambiaron: Francisco pasó a amasijo y Jessi es incorporación
+// nueva. Todavía no hay medición de caída por cansancio en horas siguientes
+// con este equipo — no inventar una curva, cargar cuando se cronometre.
 export const CAPACIDAD_ARMADO = [
-  { turno: "1ra hora", alfajoresPorHora: 504 },
-  { turno: "2da hora", alfajoresPorHora: 392 },
-  { turno: "3ra hora", alfajoresPorHora: 336, nota: "caída ~33% por cansancio, considerar rotación" },
+  {
+    turno: "María + Jessi armando, Javier recibe y embandeja",
+    alfajoresPorHora: 728, // 52 paquetes x14, cronometrado en fábrica 12/09/2026
+  },
 ];
 
 export type ItemPedidoAgregado = {
@@ -82,6 +88,7 @@ export type CalculoProduccion = {
     bandejaPlasticaX7: number;
     bolsaImpresaX7: number;
     cajaX7: number;
+    etiquetaCajaX7: number;
     bandejaTapaIntegradaX14: number;
     etiquetaCierreX14: number;
     bandejaAbierta320g: number;
@@ -253,6 +260,8 @@ export function calcularProduccion(
       bandejaPlasticaX7: paquetesX7Totales,
       bolsaImpresaX7: paquetesX7Totales,
       cajaX7: Math.ceil(paquetesX7Totales / CONST.PAQUETES_X7_POR_CAJA),
+      // 1 etiqueta autoadhesiva por cada caja de cartón de embalaje.
+      etiquetaCajaX7: Math.ceil(paquetesX7Totales / CONST.PAQUETES_X7_POR_CAJA),
       bandejaTapaIntegradaX14: paquetesMaicenaX14,
       etiquetaCierreX14: paquetesMaicenaX14,
       bandejaAbierta320g: bandejasPepas,

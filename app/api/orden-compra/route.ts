@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getSesion, puedeVerCostos } from "@/lib/session";
 import { calcularProduccion, type ItemPedidoAgregado, type InsumoCalculado } from "@/lib/produccion";
-import { COSTOS_INSUMOS } from "@/lib/costos";
 
 export async function GET(req: NextRequest) {
   const sesion = await getSesion();
@@ -40,6 +39,7 @@ export async function GET(req: NextRequest) {
     { nombre: "Bandeja plástica x7", unidad: "u", necesarioTotal: calculo.packaging.bandejaPlasticaX7 },
     { nombre: "Bolsa impresa x7 (RNPA)", unidad: "u", necesarioTotal: calculo.packaging.bolsaImpresaX7 },
     { nombre: "Caja x7", unidad: "u", necesarioTotal: calculo.packaging.cajaX7 },
+    { nombre: "Etiqueta caja embalaje x7", unidad: "u", necesarioTotal: calculo.packaging.etiquetaCajaX7 },
     { nombre: "Bandeja con tapa x14", unidad: "u", necesarioTotal: calculo.packaging.bandejaTapaIntegradaX14 },
     { nombre: "Etiqueta cierre x14", unidad: "u", necesarioTotal: calculo.packaging.etiquetaCierreX14 },
     { nombre: "Bandeja abierta 320g Pepas", unidad: "u", necesarioTotal: calculo.packaging.bandejaAbierta320g },
@@ -53,7 +53,15 @@ export async function GET(req: NextRequest) {
     ...packagingComoInsumos,
   ];
 
-  const costoPorNombre = new Map(COSTOS_INSUMOS.map((c) => [c.nombre, c]));
+  // Precios de insumos: viven en la tabla `insumos` (editable desde /insumos),
+  // no en un archivo fijo — así se actualizan en un solo lugar para Compras
+  // y para el costeo de recetas por producto (ver lib/receta.ts).
+  const filasInsumos = (await db
+    .prepare("SELECT nombre, precio_unitario, proveedor FROM insumos")
+    .all()) as { nombre: string; precio_unitario: number; proveedor: string }[];
+  const costoPorNombre = new Map(
+    filasInsumos.map((c) => [c.nombre, { precioUnitario: c.precio_unitario, proveedor: c.proveedor }])
+  );
 
   const items = todosLosInsumos
     .map((insumo) => {

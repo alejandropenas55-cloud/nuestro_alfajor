@@ -132,6 +132,69 @@ CREATE TABLE IF NOT EXISTS catalogo_condiciones (
   visible_mayorista INTEGER NOT NULL DEFAULT 1,
   visible_distribuidor INTEGER NOT NULL DEFAULT 1
 );
+
+-- Precio de cada insumo (materia prima), editable desde /insumos. Reemplaza
+-- el array fijo que antes vivía en lib/costos.ts: "nombre" sigue siendo la
+-- clave natural para cruzar con lib/produccion.ts y stock_insumos por string
+-- exacto, igual que costos.ts ya hacía.
+CREATE TABLE IF NOT EXISTS insumos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL UNIQUE,
+  unidad TEXT NOT NULL DEFAULT 'u',
+  precio_unitario REAL NOT NULL DEFAULT 0,
+  proveedor TEXT NOT NULL DEFAULT '—',
+  actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Receta de cada producto: qué insumos y en qué cantidad lleva UNA unidad
+-- de venta (un paquete, una bandeja) de ese producto. Se carga a mano desde
+-- /recetas; no hay fórmula que la derive (a diferencia de lib/produccion.ts,
+-- que calcula por LOTE de amasijo para decidir compras).
+CREATE TABLE IF NOT EXISTS receta_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  producto_id INTEGER NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
+  insumo_id INTEGER NOT NULL REFERENCES insumos(id) ON DELETE CASCADE,
+  cantidad REAL NOT NULL,
+  UNIQUE(producto_id, insumo_id)
+);
+
+-- Migración única de los precios que antes vivían en lib/costos.ts. OR
+-- IGNORE + UNIQUE(nombre) hace que esto no duplique nada en los arranques
+-- siguientes. La unidad de cada insumo se copió de lib/produccion.ts, donde
+-- ya estaba declarada por insumo (los de packaging son todos "u").
+INSERT OR IGNORE INTO insumos (nombre, unidad, precio_unitario, proveedor) VALUES
+  ('Huevo', 'u', 116.67, 'Huvero'),
+  ('Vainilla', 'ml', 1.2, 'Emeth · Insupar'),
+  ('Colorante amarillo', 'cm³', 1.28, 'Emeth · Insupar'),
+  ('Miel', 'cm³', 4, 'Apicultor local'),
+  ('Sorbato de potasio', 'g', 17, 'CGA · Insupar/ISCO'),
+  ('Propionato de calcio', 'g', 6, 'CGA · Insupar/ISCO'),
+  ('Azúcar', 'kg', 1080, 'GAMA'),
+  ('Margarina', 'kg', 6170, 'Cordobesa · ISCO Varisco'),
+  ('Maicena (Femag)', 'kg', 1340, 'Insupar'),
+  ('Harina 000', 'kg', 740, 'Estrella del Paraná · ISCO Varisco'),
+  ('Polvo de hornear', 'g', 5.6, 'Prindal · ISCO Varisco'),
+  ('Bicarbonato de sodio', 'g', 6, '—'),
+  ('Esencia de manteca', 'ml', 1.6, '—'),
+  ('Dulce de leche', 'kg', 2350, 'La Colonias'),
+  ('Membrillo', 'kg', 2200, '—'),
+  ('Coco rallado', 'kg', 7200, '—'),
+  ('Dulce de batata', 'kg', 2400, 'Multiprocesadora'),
+  ('Mermelada de arándano', 'kg', 6200, '—'),
+  ('Frutos del bosque', 'kg', 10600, '—'),
+  ('Azúcar impalpable', 'kg', 1600, '—'),
+  ('Albúmina', 'g', 60, '—'),
+  ('Glucosa', 'g', 2.24, '—'),
+  ('Esencia de limón', 'ml', 4, '—'),
+  ('Ácido acético', 'ml', 6, '—'),
+  ('Bandeja plástica x7', 'u', 67, '—'),
+  ('Bolsa impresa x7 (RNPA)', 'u', 97.46, 'Insupar'),
+  ('Caja x7', 'u', 450, '—'),
+  ('Etiqueta caja embalaje x7', 'u', 65, 'Impresora etiquetas'),
+  ('Bandeja con tapa x14', 'u', 346.67, '—'),
+  ('Etiqueta cierre x14', 'u', 83.24, 'Impresora etiquetas'),
+  ('Bandeja abierta 320g Pepas', 'u', 410, 'Fran Descartables'),
+  ('Etiqueta Pepas', 'u', 85, 'Cizalla');
 `;
 
 // Columnas agregadas después de que la tabla usuarios ya existía en
