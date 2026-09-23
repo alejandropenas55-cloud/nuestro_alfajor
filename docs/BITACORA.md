@@ -18,6 +18,38 @@
 
 ---
 
+## 18-23 de septiembre de 2026 — Insumos/Recetas publicado en `staging`, y `staging` resultó compartir la base real
+
+Se subió todo Insumos/Recetas a `main` y se actualizó `staging` para que sea
+un espejo (estaba pausada desde el 30/07, casi 2 meses atrasada — no tenía
+nada propio que no estuviera ya en `main`, así que no se perdió nada). El link
+de prueba es un proyecto de Vercel aparte ("nuestro-alfajor-ese9") que
+Alejandro puede abrir con su celular y PIN de siempre.
+
+**Hallazgo importante:** ese ambiente de "prueba" no es una base separada —
+comparte la base real (se vieron los 92 clientes reales al entrar a Config).
+Alejandro confirmó cargar las 11 recetas ahí de todas formas. Quedó
+documentado para la próxima vez que alguien piense que `staging` es
+descartable: no lo es.
+
+Se cargaron las 11 recetas vía la API ya autenticada (sin acceso directo a
+la base). Un envío se cortó a mitad de camino por lag de red; Pepas Arándano
+quedó con 4 líneas faltantes y se detectó comparando cada producto contra la
+lista completa antes de dar el trabajo por cerrado.
+
+**Packaging de los chocolates, aclarado por Alejandro:** usan la misma
+Bandeja plástica x7 que Maicena, pero una bolsa impresa DISTINTA y más cara
+que la de RNPA — y cada chocolate (Semiamargo/Blanco) tiene su propia bolsa a
+precio distinto. Se cargaron dos insumos nuevos ("Bolsa impresa chocolate
+semiamargo x7" y "... blanco x7") en $0 hasta que Alejandro pase el precio de
+cada una. La Caja x7 y la Etiqueta de embalaje sí aplican igual que al resto.
+
+**Sigue sin precio:** el chocolate en polvo (insumo "Chocolate en polvo") y
+las dos bolsas nuevas — mientras tanto el costo de los dos chocolates está
+subestimado en esa parte.
+
+---
+
 ## 17 de septiembre de 2026 — Insumos con precio editable + Recetas por producto
 
 Hasta ahora el precio de cada materia prima vivía en un array fijo dentro del
