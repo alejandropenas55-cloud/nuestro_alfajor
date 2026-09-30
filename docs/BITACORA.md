@@ -18,6 +18,22 @@
 
 ---
 
+## 30 de septiembre de 2026 — La masa de las recetas se calcula sola desde el amasijo
+
+Alejandro detectó que en /recetas la masa de Maicena x7 tenía cargado el
+**amasijo entero** en un solo paquete (4 kg de azúcar): el costo daba $50.152
+contra $2.600 de precio de venta. Ahora la masa de Maicena, Frutal y las Pepas
+**no se carga a mano**: sale de `INSUMOS_MASA` (cantidad por amasijo) ×
+unidades del paquete ÷ rendimiento del amasijo (754 alfajores Maicena/Frutal,
+1508 pepas). Un x7 lleva 7/754 del amasijo: unos $428 de masa.
+
+Esas líneas se ven con la nota "calculado del amasijo" y sin Editar/Quitar.
+Las líneas de masa mal cargadas quedan en la base pero **ya no suman**. El
+resto (relleno, glasé, packaging) se sigue cargando a mano. Santafesino
+(tapas compradas) y los chocolates (masa sin relevar) no cambian.
+
+---
+
 ## 30 de septiembre de 2026 — Las recetas se muestran en el orden del proceso productivo
 
 Alejandro pidió que en /recetas los insumos de cada producto aparezcan en el

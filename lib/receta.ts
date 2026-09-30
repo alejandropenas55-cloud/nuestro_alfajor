@@ -6,7 +6,8 @@
 // --------------------------------------------------------------------------
 
 import db from "./db";
-import { INSUMOS_MASA } from "./produccion";
+import { INSUMOS_MASA, CONST } from "./produccion";
+import type { Producto } from "./producto-types";
 
 // Etapas del proceso productivo relevado, en el orden en que ocurren en
 // fábrica (mismas hojas del Excel NuestroAlfajor_Sistema_Produccion.xlsx:
@@ -72,10 +73,58 @@ export type LineaReceta = {
   cantidad: number;
   subtotal: number;
   etapa: EtapaReceta;
+  // true = la cantidad sale del amasijo relevado, no se carga a mano.
+  calculada: boolean;
 };
 
+// La masa de Maicena/Frutal y de Pepas NO se carga a mano: sale de
+// INSUMOS_MASA (cantidad por amasijo) repartida entre lo que rinde el
+// amasijo. Se cargó a mano una vez y quedó el amasijo entero en un solo
+// paquete (4 kg de azúcar en un x7) — así no puede volver a pasar, y si
+// cambia el rendimiento se actualizan todas las recetas juntas.
+function masaDelProducto(
+  producto: Producto
+): { campo: "porAmasijoMF" | "porAmasijoPepas"; fraccionDeAmasijo: number } | null {
+  const unidades = producto.formato === "bandeja18" ? 18 : Number(producto.formato.replace("x", ""));
+  if (!unidades) return null;
+  if (producto.linea === "Maicena" || producto.linea === "Frutal") {
+    return { campo: "porAmasijoMF", fraccionDeAmasijo: unidades / CONST.ALFAJORES_POR_AMASIJO_MF };
+  }
+  if (producto.linea.startsWith("Pepas")) {
+    return { campo: "porAmasijoPepas", fraccionDeAmasijo: unidades / CONST.PEPAS_POR_AMASIJO };
+  }
+  return null; // Santafesino (tapas compradas), chocolates (masa sin relevar)
+}
+
+async function lineasDeMasaCalculadas(
+  producto: Producto,
+  masa: NonNullable<ReturnType<typeof masaDelProducto>>
+): Promise<Omit<LineaReceta, "subtotal" | "etapa">[]> {
+  const precios = (await db
+    .prepare("SELECT id, nombre, unidad, precio_unitario FROM insumos")
+    .all()) as { id: number; nombre: string; unidad: string; precio_unitario: number }[];
+  const porNombre = new Map(precios.map((p) => [p.nombre, p]));
+
+  return INSUMOS_MASA.filter((i) => i[masa.campo] > 0).map((i) => {
+    const insumo = porNombre.get(i.nombre);
+    return {
+      id: -(insumo?.id ?? 0) || -1,
+      insumo_id: insumo?.id ?? 0,
+      nombre: i.nombre,
+      unidad: insumo?.unidad ?? i.unidad,
+      precio_unitario: insumo?.precio_unitario ?? 0,
+      cantidad: Math.round(i[masa.campo] * masa.fraccionDeAmasijo * 10000) / 10000,
+      calculada: true,
+    };
+  });
+}
+
 export async function listarRecetaDeProducto(productoId: number): Promise<LineaReceta[]> {
-  const filas = (await db
+  const producto = (await db.prepare("SELECT * FROM productos WHERE id = ?").get(productoId)) as
+    | Producto
+    | undefined;
+
+  const cargadas = ((await db
     .prepare(
       `SELECT ri.id, ri.insumo_id, i.nombre, i.unidad, i.precio_unitario, ri.cantidad
        FROM receta_items ri
@@ -83,7 +132,21 @@ export async function listarRecetaDeProducto(productoId: number): Promise<LineaR
        WHERE ri.producto_id = ?
        ORDER BY i.nombre`
     )
-    .all(productoId)) as Omit<LineaReceta, "subtotal" | "etapa">[];
+    .all(productoId)) as Omit<LineaReceta, "subtotal" | "etapa" | "calculada">[]).map((f) => ({
+    ...f,
+    calculada: false,
+  }));
+
+  // Si el producto tiene masa relevada, las líneas de masa cargadas a mano
+  // se ignoran (quedan en la base, pero no suman) y se usan las calculadas.
+  const masa = producto ? masaDelProducto(producto) : null;
+  const nombresMasa = new Set(INSUMOS_MASA.map((i) => i.nombre));
+  const filas = masa
+    ? [
+        ...(await lineasDeMasaCalculadas(producto!, masa)),
+        ...cargadas.filter((f) => !nombresMasa.has(f.nombre)),
+      ]
+    : cargadas;
 
   // Orden del proceso productivo, no alfabético. El ORDER BY de arriba solo
   // desempata los insumos que no están en ORDEN_POR_ETAPA (sort es estable).

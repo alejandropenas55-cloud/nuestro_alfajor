@@ -144,9 +144,12 @@ export default function PanelReceta({
                       {l.nombre} —{" "}
                       {l.cantidad.toLocaleString("es-AR", { maximumFractionDigits: 4 })} {l.unidad}
                     </p>
-                    <p className="text-xs text-dulce-400">${l.subtotal.toLocaleString("es-AR")}</p>
+                    <p className="text-xs text-dulce-400">
+                      ${l.subtotal.toLocaleString("es-AR")}
+                      {l.calculada && " · calculado del amasijo"}
+                    </p>
                   </div>
-                  {!enEdicion && (
+                  {!enEdicion && !l.calculada && (
                     <div className="flex gap-3 shrink-0">
                       <button
                         onClick={() => empezarEdicion(l)}
