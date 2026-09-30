@@ -18,6 +18,20 @@
 
 ---
 
+## 30 de septiembre de 2026 — Las recetas se muestran en el orden del proceso productivo
+
+Alejandro pidió que en /recetas los insumos de cada producto aparezcan en el
+orden del proceso productivo relevado y no alfabético. Ahora van agrupados por
+etapa — **Masa → Relleno → Glasé → Baño → Packaging** — y dentro de cada etapa
+en el orden en que se relevaron (el de `INSUMOS_MASA` y las listas de relleno,
+glasé y packaging de `lib/produccion.ts`). El orden vive en `lib/receta.ts`.
+
+Un insumo nuevo que no esté en esas listas (p. ej. los chocolates de cobertura)
+se ubica por palabra clave en su etapa y va al final de ella. El desplegable
+para agregar un insumo sigue alfabético, porque ahí sirve para buscar.
+
+---
+
 ## 23 de septiembre de 2026 — Insumos/Recetas publicado en producción real
 
 Alejandro probó todo en el ambiente de "staging" (ver entrada de abajo) y
