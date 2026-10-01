@@ -128,19 +128,28 @@ export default function PanelReceta({
         <p className="text-dulce-400 text-sm mb-3">Todavía no hay insumos cargados en la receta.</p>
       ) : (
         <div className="flex flex-col gap-2 mb-3">
-          {lineas.map((l) => {
+          {lineas.map((l, idx) => {
             const enEdicion = editandoId === l.insumo_id;
+            const empiezaEtapa = idx === 0 || lineas[idx - 1].etapa !== l.etapa;
             return (
               <div key={l.id} className="border-b border-masa-100 pb-2 last:border-0">
+                {empiezaEtapa && (
+                  <p className="text-xs uppercase tracking-wide text-dulce-400 font-display mt-2 mb-1">
+                    {l.etapa}
+                  </p>
+                )}
                 <div className="flex justify-between items-center gap-3">
                   <div>
                     <p className="text-dulce-700 text-sm">
                       {l.nombre} —{" "}
                       {l.cantidad.toLocaleString("es-AR", { maximumFractionDigits: 4 })} {l.unidad}
                     </p>
-                    <p className="text-xs text-dulce-400">${l.subtotal.toLocaleString("es-AR")}</p>
+                    <p className="text-xs text-dulce-400">
+                      ${l.subtotal.toLocaleString("es-AR")}
+                      {l.calculada && " · calculado del amasijo"}
+                    </p>
                   </div>
-                  {!enEdicion && (
+                  {!enEdicion && !l.calculada && (
                     <div className="flex gap-3 shrink-0">
                       <button
                         onClick={() => empezarEdicion(l)}
