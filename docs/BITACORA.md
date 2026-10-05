@@ -45,8 +45,10 @@ Pepas $3.000. El mismo aumento en porcentaje se aplica a los otros canales:
 Consumidor final redondeado a $100; distribuidor sigue la regla de mayorista −15%
 redondeado a $50. Pepas de Arándano y Frutos del Bosque no se tocaron (pausadas).
 La lista mayorista de pedidos ya estaba programada en `productos` (fecha de corte
-2026-10-10). El catálogo no tiene fecha: lo cambia la tarea programada del 10/10
-a las 00:05 (corre con la app de Claude abierta). Reemplaza la nota de abajo que
+2026-10-10). **Cambio:** Alejandro pidió que las páginas muestren la lista nueva
+desde el mismo 5/10, así que el catálogo (consumidor final, mayorista y
+distribuidor) se actualizó ese día y se canceló la tarea programada del 10/10.
+Los pedidos mayoristas con entrega antes del 10/10 siguen saliendo a precio viejo. Reemplaza la nota de abajo que
 hablaba solo del Maicena x7.
 
 ---
