@@ -16,7 +16,7 @@ type Cliente = { id: number; nombre: string; ciudad: string | null; lista_difusi
 // decide con qué lista se valoriza el remito (ver lib/pricing.ts).
 const CANALES: Array<[Lista, string, string]> = [
   ["mayorista", "Mayorista", "Escuelas, clubes, negocios y revendedores"],
-  ["distribuidor", "Distribuidor", "Compra por volumen, sin mínimo"],
+  ["distribuidor", "Distribuidor", "Compra por volumen, mínimo 15 cajas"],
   ["minorista", "Consumidor final", "Le vende directo a la persona"],
 ];
 

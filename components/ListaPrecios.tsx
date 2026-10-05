@@ -34,8 +34,8 @@ const CANAL: Record<
   distribuidor: {
     titulo: "Lista para distribuidores",
     bajada:
-      "Precios de distribuidor sobre la línea completa. Sin mínimo de compra: " +
-      "armás el pedido con las cantidades que necesites y lo cerramos por WhatsApp.",
+      "Precios de distribuidor sobre la línea completa. Compra mínima: 15 cajas " +
+      "por pedido. Armás el pedido y lo cerramos por WhatsApp.",
     nota: "Precio de distribuidor por paquete",
     saludo: "Hola! Somos distribuidores y queremos hacer un pedido a Nuestro Alfajor:",
     conMinimos: false,
@@ -241,8 +241,8 @@ export default function ListaPrecios({
               {!canal.conMinimos ? (
                 elegidos.length === 0 ? (
                   <p className="may-plomo" style={{ margin: 0, fontSize: ".9rem" }}>
-                    Sin mínimo de compra: armá el pedido con las cantidades que
-                    necesites.
+                    Compra mínima: 15 cajas por pedido (la caja de alfajores x7
+                    trae 15 paquetes).
                   </p>
                 ) : (
                   <div className="may-total">
