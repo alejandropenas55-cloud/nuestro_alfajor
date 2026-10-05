@@ -18,6 +18,23 @@
 
 ---
 
+## 5 de octubre de 2026 — Propuesta de acuerdo para Ariel (distribuidor costa del Uruguay)
+
+Alejandro se junta hoy con Ariel para dejarle una caja de muestra y una propuesta
+de acuerdo (`docs/propuesta-distribucion-ariel-2026-10-05.html`). Se arma como
+"lo que te damos / lo que te pedimos": zona exclusiva ↔ 60 cajas por trimestre;
+precio −15% con 15 días de aviso de aumento ↔ pago al retirar los 3 primeros
+pedidos y después cuenta corriente a 15 días; producción reservada en enero,
+febrero y julio ↔ pedidos con 3 días (7 en temporada); 20 días de vida útil
+mínima y reposición ↔ almacenamiento y rotación; salida con 30 días de aviso.
+Bonificación de 5% el mes que pase las 50 cajas. Prueba de octubre a diciembre
+sin mínimo trimestral; desde enero de 2027, contrato por 12 meses. Es una
+propuesta para conversar, no un contrato: no tiene costos ni piso. Los números
+(60 cajas, 5%, 15 días) son propuesta de Palanca y faltan validar con Javier y
+Mercedes.
+
+---
+
 ## 5 de octubre de 2026 — Distribuidor: compra mínima de 15 cajas
 
 El canal distribuidor deja de ser "sin mínimo": la compra mínima es **15 cajas
