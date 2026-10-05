@@ -18,6 +18,16 @@
 
 ---
 
+## 5 de octubre de 2026 — Distribuidor: compra mínima de 15 cajas
+
+El canal distribuidor deja de ser "sin mínimo": la compra mínima es **15 cajas
+por pedido** (la caja de alfajores x7 trae 15 paquetes). Se ve en la bajada y en
+la solapa Pedidos de /distribuidor, y como condición comercial propia del canal
+(la de mayorista, 15 paquetes, sigue igual y ya no se muestra a distribuidores).
+Es solo texto: el pedido no lo controla. Publicado y verificado en vivo.
+
+---
+
 ## 5 de octubre de 2026 — Lista de precios nueva desde el 10 de octubre, en los tres canales
 
 Javier y Mercedes pasaron la lista mayorista nueva desde el 10/10: Maicena x7
