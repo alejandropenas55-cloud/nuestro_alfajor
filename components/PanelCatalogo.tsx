@@ -412,7 +412,7 @@ function Formulario({
         />
         <PrecioCanal
           label="Distribuidor"
-          detalle="Sin mínimo de compra"
+          detalle="Compra mínima: 15 cajas"
           valor={b.precio_distribuidor}
           onChange={(v) => set("precio_distribuidor", v)}
           placeholder="2200"

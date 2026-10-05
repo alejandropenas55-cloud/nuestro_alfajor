@@ -7,14 +7,15 @@ import {
 } from "@/lib/catalogo";
 import ListaPrecios from "@/components/ListaPrecios";
 
-// Canal distribuidor: precio propio y SIN mínimos de compra. Es la misma
+// Canal distribuidor: precio propio y compra mínima de 15 cajas (solo texto:
+// no se controla en el pedido como en /mayorista). Es la misma
 // página que /mayorista con otra lista de precios — misma tabla, misma foto,
 // mismos textos.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Nuestro Alfajor — Lista para distribuidores",
-  description: "Precios de distribuidor de Nuestro Alfajor, sin mínimo de compra.",
+  description: "Precios de distribuidor de Nuestro Alfajor. Compra mínima: 15 cajas.",
 };
 
 export default async function DistribuidorPage() {

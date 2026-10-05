@@ -18,6 +18,60 @@
 
 ---
 
+## 5 de octubre de 2026 — Lista de precios nueva desde el 10 de octubre, en los tres canales
+
+Javier y Mercedes pasaron la lista mayorista nueva desde el 10/10: Maicena x7
+$2.700, x14 $5.400, Frutal y Santafesino $3.100, Chocolates $4.000 (sin cambio),
+Pepas $3.000. El mismo aumento en porcentaje se aplica a los otros canales:
+
+| Producto | Mayorista | Consumidor final | Distribuidor |
+|---|---|---|---|
+| Maicena x7 | 2.700 | 4.700 | 2.300 |
+| Maicena x14 | 5.400 | 9.300 | 4.600 |
+| Frutal / Santafesino x7 | 3.100 | 5.200 | 2.650 |
+| Chocolates x7 | 4.000 | 5.500 | 3.400 |
+| Pepas | 3.000 | 4.300 | 2.550 |
+
+Consumidor final redondeado a $100; distribuidor sigue la regla de mayorista −15%
+redondeado a $50. Pepas de Arándano y Frutos del Bosque no se tocaron (pausadas).
+La lista mayorista de pedidos ya estaba programada en `productos` (fecha de corte
+2026-10-10). El catálogo no tiene fecha: lo cambia la tarea programada del 10/10
+a las 00:05 (corre con la app de Claude abierta). Reemplaza la nota de abajo que
+hablaba solo del Maicena x7.
+
+---
+
+## 5 de octubre de 2026 — Nueva lista de distribuidor y receta del Maicena x7 corregida
+
+**Qué se decidió.** La lista de distribuidor pasa a ser la mayorista menos 15%
+(antes era menos 8%): Maicena x7 $2.200, x14 $4.400, Frutal y Santafesino
+$2.550, los dos chocolates $3.400, Pepas $2.400. Ya está cargada en la base real
+y verificada en vivo en /distribuidor. Se fijó también un piso de negociación
+(costo de hacerlo × 1,4): Santafesino $1.850, Maicena x7 $1.800. Todo está en
+`docs/precio-distribuidor-2026-10-05.html` (uso interno, el piso no se le muestra
+al distribuidor).
+
+**Por qué.** Con 8% de descuento un distribuidor que revende a precio mayorista
+no gana nada. Con 15% Nuestro Alfajor sigue dejando más del 40% en los
+alfajores, y el volumen del distribuidor cae en los meses de valle.
+
+**Agregado el mismo día.** El Maicena x7 sube a $2.700 mayorista desde el
+10/10 (los demás productos no cambian), y el distribuidor acompaña a $2.300.
+La lista mayorista quedó programada en `productos` (fecha de corte 2026-10-10).
+El catálogo (/mayorista y /distribuidor) no tiene fecha: lo actualiza una tarea
+programada de Claude el 10/10 a las 00:05, que corre con la app abierta.
+
+**Sobre la receta del Maicena x7.** En la base, las líneas de masa del
+Maicena x7 tenían las cantidades de un amasijo entero; se dividieron por 107,7.
+Ese error ya estaba resuelto desde el 30/09 en el sistema (ver entrada del 30/09:
+la masa se calcula desde el amasijo y esas líneas se ignoran), así que el arreglo
+en la base no cambia nada de lo que se ve. Los costos de la lista coinciden con
+los del sistema (Maicena x7 ≈ $1.075 de materia prima y envase).
+
+---
+
+---
+
 ## 30 de septiembre de 2026 — La masa de las recetas se calcula sola desde el amasijo
 
 Alejandro detectó que en /recetas la masa de Maicena x7 tenía cargado el
@@ -45,6 +99,19 @@ glasé y packaging de `lib/produccion.ts`). El orden vive en `lib/receta.ts`.
 Un insumo nuevo que no esté en esas listas (p. ej. los chocolates de cobertura)
 se ubica por palabra clave en su etapa y va al final de ella. El desplegable
 para agregar un insumo sigue alfabético, porque ahí sirve para buscar.
+
+---
+
+## 29 de septiembre de 2026 — Borrador de la propuesta octubre-diciembre, con cuatro opciones
+
+Para la entrega del viernes 2/10 se armó `docs/como-seguimos-hasta-diciembre-2026-10-02.html`.
+Tiene el número del verano (fijos de ~$6M/mes calculados con Javier y Mercedes →
+3.372 paquetes/mes para empatar, pozo de ~$8,8M entre enero y febrero) y las opciones
+para seguir. A las tres que ya había (A ellos ejecutan, B Alejandro vende, C Alejandro
+con Francisco) se sumó la **D: la costa del río Uruguay la vende un distribuidor**, con
+Ariel como primer candidato (Javier y Mercedes ya saben de él). La D es la recomendada:
+no suma costos fijos y el santafesino no pasa por el amasijo. Precios con base en
+$400.000/mes; en la D, Alejandro cobra solo de Nuestro Alfajor.
 
 ---
 
